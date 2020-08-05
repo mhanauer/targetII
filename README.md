@@ -253,9 +253,127 @@ discharge_psych = discharge
 
 base = data.frame(base_demos_all, INQ_PB_b, INQ_TB_b, RAS_GSO_b, RAS_PCH_b, RAS_NDS_b, RAS_WAH_b, SD_SIS_b, RPP_SIS_b, URICA_b, SEASA_b)
 
-discharge = data.frame(INQ_PB_d, INQ_TB_d, RAS_GSO_d, RAS_PCH_d, RAS_NDS_d, RAS_WAH_d ,SD_SIS_d, RPP_SIS_d, URICA_d, SEASA_d, WAI_d, CSQ_d)
+discharge = data.frame(INQ_PB_d, INQ_TB_d, RAS_GSO_d, RAS_PCH_d, RAS_NDS_d, RAS_WAH_d ,SD_SIS_d, RPP_SIS_d, URICA_d, SEASA_d, WAI_d, CSQ_d, id = discharge$id)
 
 
 ```
 Check pyschometrics 
+```{r}
+library(psych)
+#########################
+# Base psychometrics
+INQ_PB_b_psych = base_psych[,14:18]
+INQ_TB_b_psych = base_psych[,19:23]
+RAS_GSO_b_psych  = base_psych[,c(32:36, 51)]
+RAS_PCH_b_psych  = base_psych[,37:44]
+RAS_NDS_b_psych  = base_psych[,45:47]
+RAS_WAH_b_psych  = base_psych[,48:50]
+SD_SIS_b_psych  =  base_psych[,56:59]
+RPP_SIS_b_psych  = base_psych[,c(52:55,60:61)]
+URICA_b_psych  = base_psych[,62:73]
+SEASA_b_psych  = base_psych[,74:85]
+
+base_psych = list(INQ_PB_b_psych, INQ_TB_b_psych, RAS_GSO_b_psych, RAS_PCH_b_psych, RAS_NDS_b_psych, RAS_WAH_b_psych, SD_SIS_b_psych, RPP_SIS_b_psych, URICA_b_psych, SEASA_b_psych)
+
+base_psych_out = list()
+for(i in 1:length(base_psych)){
+ base_psych_out[[i]]= summary(omega(base_psych[[i]], poly= TRUE))
+}
+
+INQ_PB_d_psych = discharge_psych[,2:6]
+INQ_TB_d_psych = discharge_psych[,7:10]
+RAS_GSO_d_psych = discharge_psych[,c(12:16, 31)]
+RAS_PCH_d_psych = discharge_psych[,17:24]
+RAS_NDS_d_psych = discharge_psych[,25:27]
+RAS_WAH_d_psych = discharge_psych[,28:30]
+SD_SIS_d_psych =  discharge_psych[,36:39]
+RPP_SIS_d_psych = discharge_psych[,c(32:34,40:41)]
+URICA_d_psych = discharge_psych[,42:53]
+SEASA_d_psych = discharge_psych[,54:65]
+WAI_d_psych = discharge_psych[,66:69]
+CSQ_d_psych = discharge_psych[,70:77]
+
+dis_psych = list(INQ_PB_d_psych, INQ_TB_d_psych, RAS_GSO_d_psych, RAS_PCH_d_psych, RAS_NDS_d_psych, RAS_WAH_d_psych, SD_SIS_d_psych, RPP_SIS_d_psych, URICA_d_psych, SEASA_d_psych)
+dis_psych_out = list()
+for(i in 1:length(dis_psych)){
+ dis_psych_out[[i]]= summary(omega(dis_psych[[i]], poly= TRUE))
+}
+
+#### EFA 
+library(paran)
+map_base_out = list()
+for(i in 1:length(base_psych)){
+  map_base_out[[i]] = vss(base_psych[[i]], n = 3, rotate = "oblimin", fm = "mle")
+}
+map_base_out
+
+map_dis_out = list()
+for(i in 1:length(dis_psych)){
+  map_dis_out[[i]] = vss(dis_psych[[i]], n = 3, rotate = "oblimin", fm = "mle")
+}
+map_dis_out
+
+paran_base_out = list()
+for(i in 1:length(base_psych)){
+  paran_base_out[[i]] = na.omit(base_psych[[i]])
+  paran_base_out[[i]] = paran(paran_base_out[[i]], centile = 95, iterations = 1000, graph = TRUE, cfa = TRUE)
+}
+paran_base_out
+
+
+paran_dis_out = list()
+for(i in 1:length(base_psych)){
+  paran_dis_out[[i]] = na.omit(dis_psych[[i]])
+  paran_dis_out[[i]] = paran(paran_dis_out[[i]], centile = 95, iterations = 1000, graph = TRUE, cfa = TRUE)
+}
+paran_dis_out
+
+
+```
+Merge the data
+```{r}
+dim(base)
+base
+dim(discharge)
+discharge
+target_2_dat = merge(base, discharge, by = "id")
+dim(target_2_dat)
+
+
+```
+
+
+
+Get descriptives ready
+```{r}
+target_2_dat[,9:13] = apply(target_2_dat[,9:13], 2, function(x){as.factor(x)})
+target_2_dat$Age = as.numeric(target_2_dat$Age)
+part_charac =  prettyR::describe(target_2_dat[-c(1)])
+num_charac = data.frame(part_charac$Numeric)
+num_charac = num_charac[c(1,4),]
+num_charac = t(num_charac)
+num_charac = round(num_charac,2) 
+num_charac
+
+fac_charac = data.frame(part_charac$Factor)
+fac_charac = round(fac_charac,2)
+fac_charac = t(fac_charac)
+fac_charac
+```
+
+
+
+Look into missing data and imputation
+```{r}
+library(naniar)
+miss_var_summary(target_2_dat)
+library(MissMech)
+TestMCARNormality(target_2_dat[-c(1)])
+
+target_2_dat_complete = na.omit(target_2_dat)
+dim(target_2_dat)
+dim(target_2_dat_complete)
+
+```
+
 
