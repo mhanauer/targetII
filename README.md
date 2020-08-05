@@ -35,6 +35,7 @@ head(base)
 #
 #26:112, 131:134
 
+
 base_demos = base[c("id", "Age", "Gender", "HispanicLatino", "IDAfricanAmerican", "IDAsian", "IDWhiteEuropean", "IDAIAN", "IDHawaiianPacific", "IDMultiracial", "Orientation", "Relationship", "Education", "Employment")]
 base_outcomes = base[c(25:104, 107:109)]
 base = data.frame(base_demos, base_outcomes)
@@ -42,11 +43,16 @@ base$id = gsub("[A-z]", "", base$id)
 write.csv(base, "base.csv", row.names = FALSE)
 base = read.csv("base.csv", header = TRUE, na.strings = c(""))
 base$id
-
-library(sfsmisc)
-base$keep =  is.whole(base$id)
-### drop those with FALSE
-base = subset(base, keep == TRUE)
+# Remove na's for just the ID column
+base$remove = is.na(base$id)
+base = subset(base, remove == FALSE)
+base = base[order(base$id),]
+### Ids are in order.  So if you remove the .1,2,3 then you can delete all instances expect the first one.
+base$id = gsub("\\..*" , "",base$id)
+base
+### Now keep the first unique instance 
+library(dplyr)
+base = distinct(base, id, .keep_all = TRUE)
 base
 ```
 
