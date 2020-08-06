@@ -54,6 +54,7 @@ base$remove = is.na(base$id)
 base = subset(base, remove == FALSE)
 base = base[order(base$id),]
 base$remove = NULL
+sum(is.na(base$id))
 ### Ids are in order.  So if you remove the .1,2,3 then you can delete all instances expect the first one.
 base$id = gsub("\\..*" , "",base$id)
 base
@@ -71,8 +72,8 @@ base[,14:91] = apply(base[,14:91], 2, function(x){as.numeric(x)})
 
 ### Now reverse score items
 ## INQ6, INQ7, INQ10
-base$INQ7b = 8-base$INQ7b
 base$INQ6b = 8-base$INQ6b
+base$INQ7b = 8-base$INQ7b
 base$INQ10b = 8-base$INQ10b
 ### Create total score for INQ
 base[,14:23]
@@ -129,19 +130,26 @@ SD_SIS_b =  apply(base[,56:59], 1, mean, na.rm = TRUE)
 #SIS10b:I’ve come close to taking my own life 
 RPP_SIS_b = apply(base[,c(52:55,60:61)], 1, mean, na.rm = TRUE)
 
-### URICA assume one construct unless Rachel tells you different
-## Make higher scores negative
-## URICA2b: I am finally doing some work on changing my suicide risk. 
-## URICA7b: I wish I had more ideas on how to solve the problem of my suicide risk 
-## URICA8b: I may need a boost right now to help me maintain changes to my suicide risk  I've already made.
-## URICA12b: I am currently in the process of working to change my suicide risk.
-base$URICA2b = 6-base$URICA2b
-base$URICA7b = 6-base$URICA7b
-base$URICA8b = 6-base$URICA8b
-base$URICA12b = 6-base$URICA12b
 
 
-URICA_b = apply(base[,62:73], 1, mean, na.rm = TRUE)
+### To create ""readiness to change" score get average score across all four subscales then sum comtemplation, action, and maintenance and then subtract preconemplation.
+#https://habitslab.umbc.edu/urica-readiness-score/
+# 1,5,6
+Precomp_URICA_b = base[,c(62, 66:67)]
+Precomp_URICA_b = apply(Precomp_URICA_b, 1, mean, na.rm  = TRUE)
+
+Contemp_URICA_b = base[c("URICA2b", "URICA8b", "URICA10b")]
+Contemp_URICA_b = apply(Contemp_URICA_b, 1, mean, na.rm = TRUE)
+
+Action_URICA_b = base[c("URICA3b", "URICA9b", "URICA11b")]
+Action_URICA_b = apply(Action_URICA_b, 1, mean, na.rm = TRUE)
+
+Maintain_URICA_b = base[c("URICA4b", "URICA7b", "URICA12b")]
+Maintain_URICA_b = apply(Maintain_URICA_b, 1, mean, na.rm  = TRUE)
+
+RTC_URICA_b = (Contemp_URICA_b+Action_URICA_b+Maintain_URICA_b)-Precomp_URICA_b
+
+
 SEASA_b = apply(base[,74:85], 1, mean, na.rm = TRUE)
 
 #####
@@ -218,25 +226,31 @@ SD_SIS_d =  apply(discharge[,36:39], 1, mean, na.rm = TRUE)
 #SIS4b: I have made attempts to kill myself
 #SIS9b: I’ve felt there is no solution to my problems other than to end my own life
 #SIS10b:I’ve come close to taking my own life 
-RPP_SIS_d = apply(discharge[,c(32:34,40:41)], 1, mean, na.rm = TRUE)
+RPP_SIS_d = apply(discharge[,c(32:35,40:41)], 1, mean, na.rm = TRUE)
 
 
-### URICA assume one construct unless Rachel tells you different
-## Make higher scores negative
-## URICA2b: I am finally doing some work on changing my suicide risk. 
-## URICA7b: I wish I had more ideas on how to solve the problem of my suicide risk 
-## URICA8b: I may need a boost right now to help me maintain changes to my suicide risk  I've already made.
-## URICA12b: I am currently in the process of working to change my suicide risk.
-discharge[c(42:44)]
 
-discharge$URICA2d = 6-discharge$URICA2d
-discharge$URICA7d = 6-discharge$URICA7d
-discharge$URICA8d = 6-discharge$URICA8d
-discharge$URICA12d = 6-discharge$URICA12d
+Precomp_URICA_d = discharge[c("URICA1d", "URICA5d", "URICA6d")]
+Precomp_URICA_d = apply(Precomp_URICA_d, 1, mean, na.rm  = TRUE)
 
-URICA_d = apply(discharge[,42:53], 1, mean, na.rm = TRUE)
+Contemp_URICA_d = discharge[c("URICA2d", "URICA8d", "URICA10d")]
+Contemp_URICA_d = apply(Contemp_URICA_d, 1, mean, na.rm = TRUE)
+
+Action_URICA_d = discharge[c("URICA3d", "URICA9d", "URICA11d")]
+Action_URICA_d = apply(Action_URICA_d, 1, mean, na.rm = TRUE)
+
+Maintain_URICA_d = discharge[c("URICA4d", "URICA7d", "URICA12d")]
+Maintain_URICA_d = apply(Maintain_URICA_d, 1, mean, na.rm  = TRUE)
+
+RTC_URICA_d = (Contemp_URICA_d+Action_URICA_d+Maintain_URICA_d)-Precomp_URICA_d
+
 SEASA_d = apply(discharge[,54:65], 1, mean, na.rm = TRUE)
 WAI_d = apply(discharge[,66:69], 1, mean, na.rm = TRUE)
+
+### CSQ-8 4, 5, and 8 reversed scoring
+discharge$CSQ4 = 5-discharge$CSQ4
+discharge$CSQ5 = 5-discharge$CSQ5
+discharge$CSQ8 = 5-discharge$CSQ8
 CSQ_d = apply(discharge[,70:77], 1, mean, na.rm = TRUE)
 
 ### Clean up base demos
@@ -251,13 +265,15 @@ base_demos_all
 base_psych = base
 discharge_psych = discharge
 
-base = data.frame(base_demos_all, INQ_PB_b, INQ_TB_b, RAS_GSO_b, RAS_PCH_b, RAS_NDS_b, RAS_WAH_b, SD_SIS_b, RPP_SIS_b, URICA_b, SEASA_b)
+base = data.frame(base_demos_all, INQ_PB_b, INQ_TB_b, RAS_GSO_b, RAS_PCH_b, RAS_NDS_b, RAS_WAH_b, SD_SIS_b, RPP_SIS_b, SEASA_b, RTC_URICA_b)
 
-discharge = data.frame(INQ_PB_d, INQ_TB_d, RAS_GSO_d, RAS_PCH_d, RAS_NDS_d, RAS_WAH_d ,SD_SIS_d, RPP_SIS_d, URICA_d, SEASA_d, WAI_d, CSQ_d, id = discharge$id)
+discharge = data.frame(INQ_PB_d, INQ_TB_d, RAS_GSO_d, RAS_PCH_d, RAS_NDS_d, RAS_WAH_d ,SD_SIS_d, RPP_SIS_d, SEASA_d, WAI_d, CSQ_d, RTC_URICA_d, id = discharge$id)
 
 
 ```
 Check pyschometrics 
+
+SEASA_b_psych low alpha .65
 ```{r}
 library(psych)
 #########################
@@ -273,7 +289,7 @@ RPP_SIS_b_psych  = base_psych[,c(52:55,60:61)]
 URICA_b_psych  = base_psych[,62:73]
 SEASA_b_psych  = base_psych[,74:85]
 
-base_psych = list(INQ_PB_b_psych, INQ_TB_b_psych, RAS_GSO_b_psych, RAS_PCH_b_psych, RAS_NDS_b_psych, RAS_WAH_b_psych, SD_SIS_b_psych, RPP_SIS_b_psych, URICA_b_psych, SEASA_b_psych)
+base_psych = list(INQ_PB_b_psych, INQ_TB_b_psych, RAS_GSO_b_psych, RAS_PCH_b_psych, RAS_NDS_b_psych, RAS_WAH_b_psych, SD_SIS_b_psych, RPP_SIS_b_psych, RTC_URICA_b, SEASA_b_psych)
 
 base_psych_out = list()
 for(i in 1:length(base_psych)){
@@ -287,16 +303,16 @@ RAS_PCH_d_psych = discharge_psych[,17:24]
 RAS_NDS_d_psych = discharge_psych[,25:27]
 RAS_WAH_d_psych = discharge_psych[,28:30]
 SD_SIS_d_psych =  discharge_psych[,36:39]
-RPP_SIS_d_psych = discharge_psych[,c(32:34,40:41)]
+RPP_SIS_d_psych = discharge_psych[,c(32:35,40:41)]
 URICA_d_psych = discharge_psych[,42:53]
 SEASA_d_psych = discharge_psych[,54:65]
 WAI_d_psych = discharge_psych[,66:69]
 CSQ_d_psych = discharge_psych[,70:77]
 
-dis_psych = list(INQ_PB_d_psych, INQ_TB_d_psych, RAS_GSO_d_psych, RAS_PCH_d_psych, RAS_NDS_d_psych, RAS_WAH_d_psych, SD_SIS_d_psych, RPP_SIS_d_psych, URICA_d_psych, SEASA_d_psych)
+dis_psych = list(INQ_PB_d_psych, INQ_TB_d_psych, RAS_GSO_d_psych, RAS_PCH_d_psych, RAS_NDS_d_psych, RAS_WAH_d_psych, SD_SIS_d_psych, RPP_SIS_d_psych, RTC_URICA_d, SEASA_d_psych)
 dis_psych_out = list()
 for(i in 1:length(dis_psych)){
- dis_psych_out[[i]]= summary(omega(dis_psych[[i]], poly= TRUE))
+ dis_psych_out[[i]]= summary(omega(dis_psych[[i]]))
 }
 
 #### EFA 
@@ -353,7 +369,8 @@ num_charac = data.frame(part_charac$Numeric)
 num_charac = num_charac[c(1,4),]
 num_charac = t(num_charac)
 num_charac = round(num_charac,2) 
-num_charac
+
+write.csv(num_charac, "num_charac.csv")
 
 fac_charac = data.frame(part_charac$Factor)
 fac_charac = round(fac_charac,2)
@@ -366,14 +383,21 @@ fac_charac
 Look into missing data and imputation
 ```{r}
 library(naniar)
+### Remove hispanic and latino from the analysis to avoid large percentage of missing data
+target_2_dat$HispanicLatino = NULL
+
+write.csv(target_2_dat, "target_2_dat.csv", row.names = FALSE)
+target_2_dat = read.csv("target_2_dat.csv", header = TRUE, na.strings = c("NA"))
+target_2_dat
 miss_var_summary(target_2_dat)
+prop_miss_case(target_2_dat)
+
 library(MissMech)
 TestMCARNormality(target_2_dat[-c(1)])
 
 target_2_dat_complete = na.omit(target_2_dat)
 dim(target_2_dat)
 dim(target_2_dat_complete)
-
 ```
 
 
