@@ -28,7 +28,7 @@ Run regression with weights, non-inferiority, and run sensitivity
 
 
 ```{r}
-setwd("C:/Users/Matthew.Hanauer/Desktop/Study 5_RELATE Enhanced Follow-up & Tech/3_Data/Database Exports & GSR Analysis/7.31.20/CSV Files")
+setwd("P:/Evaluation/TN Lives Count_Target2/Study 5_RELATE Enhanced Follow-up & Tech/3_Data/Database Exports & GSR Analysis/7.31.20/CSV Files")
 base = read.csv("Baseline Merged 7.31.20.csv", header = TRUE, na.strings = c(-7))
 discharge = read.csv("Discharge Merged 7.31.20.csv", header = TRUE, na.strings = c(-7))
 ## change ID 
@@ -153,7 +153,7 @@ RTC_URICA_b = (Contemp_URICA_b+Action_URICA_b+Maintain_URICA_b)-Precomp_URICA_b
 SEASA_b = apply(base[,74:85], 1, mean, na.rm = TRUE)
 
 #####
-setwd("C:/Users/Matthew.Hanauer/Desktop/Study 5_RELATE Enhanced Follow-up & Tech/3_Data/Database Exports & GSR Analysis/7.31.20/CSV Files")
+setwd("P:/Evaluation/TN Lives Count_Target2/Study 5_RELATE Enhanced Follow-up & Tech/3_Data/Database Exports & GSR Analysis/7.31.20/CSV Files")
 discharge = read.csv("Discharge Merged 7.31.20.csv", header = TRUE, na.strings = c(-7))
 colnames(discharge)[1] = "id"
 discharge$id = gsub("[A-z]", " ", discharge$id)
@@ -269,6 +269,8 @@ base = data.frame(base_demos_all, INQ_PB_b, INQ_TB_b, RAS_GSO_b, RAS_PCH_b, RAS_
 
 discharge = data.frame(INQ_PB_d, INQ_TB_d, RAS_GSO_d, RAS_PCH_d, RAS_NDS_d, RAS_WAH_d ,SD_SIS_d, RPP_SIS_d, SEASA_d, WAI_d, CSQ_d, RTC_URICA_d, id = discharge$id)
 
+base_psych
+
 
 ```
 Check pyschometrics 
@@ -288,6 +290,8 @@ SD_SIS_b_psych  =  base_psych[,56:59]
 RPP_SIS_b_psych  = base_psych[,c(52:55,60:61)]
 URICA_b_psych  = base_psych[,62:73]
 SEASA_b_psych  = base_psych[,74:85]
+
+
 
 base_psych = list(INQ_PB_b_psych, INQ_TB_b_psych, RAS_GSO_b_psych, RAS_PCH_b_psych, RAS_NDS_b_psych, RAS_WAH_b_psych, SD_SIS_b_psych, RPP_SIS_b_psych, RTC_URICA_b, SEASA_b_psych)
 
@@ -346,6 +350,42 @@ paran_dis_out
 
 
 ```
+SEASA pyschos
+Omega heir = .61
+```{r}
+head(SEASA_b_psych)
+
+summary(omega(SEASA_b_psych))
+
+efa3 = fa(r = SEASA_b_psych, nfactors = 3)
+efa3
+fa.diagram(efa3)
+
+efa2 = fa(r = SEASA_b_psych, nfactors = 2)
+efa2
+fa.diagram(efa2)
+
+SEASA_b_psych[-c(7, 11)]
+
+efa2_2 = fa(r = SEASA_b_psych[-c(7, 11)], nfactors = 2)
+efa2_2
+fa.diagram(efa2_2)
+
+
+# now try VSS
+vss(SEASA_b_psych, n = 3, rotate = "oblimin", fm = "mle")
+
+# now try paran
+library(paran)
+SEASA_b_psych_Complete = na.omit(SEASA_b_psych)
+paran(SEASA_b_psych_Complete, centile = 95, iterations = 1000, graph = TRUE, cfa = TRUE)
+
+### Try omega with two factors
+summary(omega(SEASA_b_psych[1:6]))
+summary(omega(SEASA_b_psych[7:11]))
+```
+
+
 Merge the data
 ```{r}
 dim(base)
