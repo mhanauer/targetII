@@ -398,6 +398,8 @@ TestMCARNormality(target_2_dat[-c(1)])
 target_2_dat_complete = na.omit(target_2_dat)
 dim(target_2_dat)
 dim(target_2_dat_complete)
+test1 = data.frame(c = rnorm(5), d = rnorm(5))
+write.csv(test1, "test1.csv", row.names = FALSE)
 ```
 
 
