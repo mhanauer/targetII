@@ -150,7 +150,15 @@ Maintain_URICA_b = apply(Maintain_URICA_b, 1, mean, na.rm  = TRUE)
 RTC_URICA_b = (Contemp_URICA_b+Action_URICA_b+Maintain_URICA_b)-Precomp_URICA_b
 
 
-SEASA_b = apply(base[,74:85], 1, mean, na.rm = TRUE)
+
+#### Create a psychometric version where you reverse score Precomp_URICA_b
+Precomp_URICA_b_reverse = base[,c(62, 66:67)]
+Precomp_URICA_b_reverse = 6-Precomp_URICA_b_reverse
+
+SEASA_1_b = apply(base[,74:79], 1, mean, na.rm = TRUE)
+
+SEASA_2_b = apply(base[,80:85], 1, mean, na.rm = TRUE)
+
 
 #####
 setwd("P:/Evaluation/TN Lives Count_Target2/Study 5_RELATE Enhanced Follow-up & Tech/3_Data/Database Exports & GSR Analysis/7.31.20/CSV Files")
@@ -183,7 +191,6 @@ discharge = apply(discharge, 2, function(x){as.numeric(x)})
 discharge = data.frame(discharge)
 discharge
 #### Create total scores
-discharge
 #INQ1b: The people in my life would be better off if I were gone 
 #INQ2b: The people in my life would be happier without me
 #INQ3b: I think my death would be a relief to the people in my life
@@ -244,7 +251,16 @@ Maintain_URICA_d = apply(Maintain_URICA_d, 1, mean, na.rm  = TRUE)
 
 RTC_URICA_d = (Contemp_URICA_d+Action_URICA_d+Maintain_URICA_d)-Precomp_URICA_d
 
-SEASA_d = apply(discharge[,54:65], 1, mean, na.rm = TRUE)
+Precomp_URICA_d_reverse = 6-discharge[c("URICA1d", "URICA5d", "URICA6d")]
+
+
+
+SEASA_1_d = apply(discharge[,54:59], 1, mean, na.rm = TRUE)
+
+SEASA_2_d = apply(discharge[,60:65], 1, mean, na.rm = TRUE)
+
+
+
 WAI_d = apply(discharge[,66:69], 1, mean, na.rm = TRUE)
 
 ### CSQ-8 4, 5, and 8 reversed scoring
@@ -265,9 +281,9 @@ base_demos_all
 base_psych = base
 discharge_psych = discharge
 
-base = data.frame(base_demos_all, INQ_PB_b, INQ_TB_b, RAS_GSO_b, RAS_PCH_b, RAS_NDS_b, RAS_WAH_b, SD_SIS_b, RPP_SIS_b, SEASA_b, RTC_URICA_b)
+base = data.frame(base_demos_all, INQ_PB_b, INQ_TB_b, RAS_GSO_b, RAS_PCH_b, RAS_NDS_b, RAS_WAH_b, SD_SIS_b, RPP_SIS_b, SEASA_1_b, SEASA_2_b, RTC_URICA_b)
 
-discharge = data.frame(INQ_PB_d, INQ_TB_d, RAS_GSO_d, RAS_PCH_d, RAS_NDS_d, RAS_WAH_d ,SD_SIS_d, RPP_SIS_d, SEASA_d, WAI_d, CSQ_d, RTC_URICA_d, id = discharge$id)
+discharge = data.frame(INQ_PB_d, INQ_TB_d, RAS_GSO_d, RAS_PCH_d, RAS_NDS_d, RAS_WAH_d ,SD_SIS_d, RPP_SIS_d, SEASA_1_d, SEASA_2_d, WAI_d, CSQ_d, RTC_URICA_d, id = discharge$id)
 
 base_psych
 
@@ -288,17 +304,24 @@ RAS_NDS_b_psych  = base_psych[,45:47]
 RAS_WAH_b_psych  = base_psych[,48:50]
 SD_SIS_b_psych  =  base_psych[,56:59]
 RPP_SIS_b_psych  = base_psych[,c(52:55,60:61)]
-URICA_b_psych  = base_psych[,62:73]
-SEASA_b_psych  = base_psych[,74:85]
+URICA_b_psych  = base_psych[,c(63:65, 68:73)]
+URICA_b_psych = data.frame(URICA_b_psych, Precomp_URICA_b_reverse)
 
-
-
-base_psych = list(INQ_PB_b_psych, INQ_TB_b_psych, RAS_GSO_b_psych, RAS_PCH_b_psych, RAS_NDS_b_psych, RAS_WAH_b_psych, SD_SIS_b_psych, RPP_SIS_b_psych, RTC_URICA_b, SEASA_b_psych)
+base_psych = list(INQ_PB_b_psych, INQ_TB_b_psych, RAS_GSO_b_psych, RAS_PCH_b_psych, RAS_NDS_b_psych, RAS_WAH_b_psych, SD_SIS_b_psych, RPP_SIS_b_psych, URICA_b_psych)
 
 base_psych_out = list()
 for(i in 1:length(base_psych)){
- base_psych_out[[i]]= summary(omega(base_psych[[i]], poly= TRUE))
+ base_psych_out[[i]]= (omega(base_psych[[i]], poly= TRUE))
+ base_psych_out[[i]] = base_psych_out[[i]]$alpha
 }
+base_psych_out
+base_psych_out = data.frame(base_psych_out)
+base_psych_out = t(base_psych_out)
+base_psych_out = data.frame(alpha_poly = base_psych_out)
+var_names = c("INQ_PB_b_psych", "INQ_TB_b_psych", "RAS_GSO_b_psych", "RAS_PCH_b_psych", "RAS_NDS_b_psych", "RAS_WAH_b_psych", "SD_SIS_b_psych", "RPP_SIS_b_psych", "URICA_b_psych")
+base_psych_out = data.frame(var_names, base_psych_out)
+base_psych_out
+write.csv(base_psych_out, "base_psych_out.csv", row.names = FALSE)
 
 INQ_PB_d_psych = discharge_psych[,2:6]
 INQ_TB_d_psych = discharge_psych[,7:10]
@@ -309,15 +332,30 @@ RAS_WAH_d_psych = discharge_psych[,28:30]
 SD_SIS_d_psych =  discharge_psych[,36:39]
 RPP_SIS_d_psych = discharge_psych[,c(32:35,40:41)]
 URICA_d_psych = discharge_psych[,42:53]
-SEASA_d_psych = discharge_psych[,54:65]
+URICA_d_psych = discharge_psych[,c(43:45,48:53)]
+URICA_d_psych = data.frame(URICA_d_psych, Precomp_URICA_d_reverse)
+SEASA_1_d_psych = discharge_psych[,54:59]
+SEASA_2_d_psych = discharge_psych[,60:65]
+
 WAI_d_psych = discharge_psych[,66:69]
 CSQ_d_psych = discharge_psych[,70:77]
 
-dis_psych = list(INQ_PB_d_psych, INQ_TB_d_psych, RAS_GSO_d_psych, RAS_PCH_d_psych, RAS_NDS_d_psych, RAS_WAH_d_psych, SD_SIS_d_psych, RPP_SIS_d_psych, RTC_URICA_d, SEASA_d_psych)
+dis_psych = list(INQ_PB_d_psych, INQ_TB_d_psych, RAS_GSO_d_psych, RAS_PCH_d_psych, RAS_NDS_d_psych, RAS_WAH_d_psych, SD_SIS_d_psych, RPP_SIS_d_psych, URICA_b_psych)
 dis_psych_out = list()
 for(i in 1:length(dis_psych)){
- dis_psych_out[[i]]= summary(omega(dis_psych[[i]]))
+ dis_psych_out[[i]]= (omega(dis_psych[[i]]))
+ dis_psych_out[[i]] = dis_psych_out[[i]]$alpha
 }
+
+dis_psych_out
+dis_psych_out = data.frame(dis_psych_out)
+dis_psych_out = t(dis_psych_out)
+dis_psych_out = data.frame(alpha_poly = dis_psych_out)
+dis_psych_out = data.frame(var_names, dis_psych_out)
+dis_psych_out
+write.csv(dis_psych_out, "dis_psych_out.csv", row.names = FALSE)
+
+
 
 #### EFA 
 library(paran)
@@ -347,6 +385,8 @@ for(i in 1:length(base_psych)){
   paran_dis_out[[i]] = paran(paran_dis_out[[i]], centile = 95, iterations = 1000, graph = TRUE, cfa = TRUE)
 }
 paran_dis_out
+
+
 
 
 ```
@@ -396,9 +436,36 @@ target_2_dat = merge(base, discharge, by = "id")
 dim(target_2_dat)
 
 
+
+```
+Now get test retest reliability 
+```{r}
+#### Get test retest reliabilities with spearman correlation
+### Create pre and post total scores assessments
+dim(target_2_dat)
+target_2_dat_psych = target_2_dat[,-c(1:13, 35,36)]
+target_2_dat_psych_pre =  target_2_dat_psych[1:11]
+target_2_dat_psych_pre = as.list(target_2_dat_psych_pre)
+target_2_dat_psych_post = target_2_dat_psych[12:22]
+target_2_dat_psych_post = as.list(target_2_dat_psych_post)
+retest_out = list()
+
+out_dat = list()
+for(i in 1:length(target_2_dat_psych_pre)){
+  out_dat[[i]] = cor(x = target_2_dat_psych_pre[[i]], y = target_2_dat_psych_post[[i]], use = "pairwise.complete.obs")
+}
+out_dat = data.frame(out_dat)
+out_dat = t(out_dat)
+out_dat = data.frame(out_dat)
+var_names = c("INQ_PB_psych", "INQ_TB_psych", "RAS_GSO_psych", "RAS_PCH_psych", "RAS_NDS_psych", "RAS_WAH_psych", "SD_SIS_psych", "RPP_SIS_psych", "SEASA_1", "SEASA_2", "URICA_psych")
+out_dat = data.frame(var_names, retest_reliability = out_dat$out_dat)
+out_dat$retest_reliability = round(out_dat$retest_reliability,2)
+write.csv(out_dat, "out_dat.csv", row.names = FALSE)
 ```
 
 
+
+Check race if all NA then may be NA, but you don't have all the races
 
 Get descriptives ready
 ```{r}
