@@ -432,10 +432,33 @@ summary(omega(SEASA_b_psych[7:11]))
 URICA EFA at base and discharge
 Not sure 
 ```{r}
-### Try EFA for all four constructs
-### Rep the list for as many times as you want 
-# So do all four constructs with 1 factors, then rep the names and the n's to 2 and repeat
 
+dat_list = list(Precomp_b_URICA_psych, Contemp_b_URICA_psych, Action_b_URICA_psych, Maintain_b_URICA_psych)
+dat_list = rep(dat_list, 3)
+factor_list = rep(1:3, each = 4)
+factor_list = as.list(factor_list)
+factor_list
+efa_urica_out = list()
+diag_out = list()
+efa_urica_out_results = list()
+
+for(i in 1:length(dat_list)){
+  efa_urica_out[[i]] = fa(dat_list[[i]], nfactors = factor_list[[i]], cor = "poly", correct = 0)
+   efa_urica_out_results[[i]] = data.frame(TLI = efa_urica_out[[i]]$TLI)
+   efa_urica_out_results[[i]] = round(efa_urica_out_results[[i]],2)
+}
+efa_urica_out_results = unlist(efa_urica_out_results)
+
+var_names_efa = c("Precomp_b_URICA_psych", "Contemp_b_URICA_psych", "Action_b_URICA_psych", "Maintain_b_URICA_psych")
+var_names_efa = rep(var_names_efa, 3)
+
+var_names_efa_paste= paste0(var_names_efa, "_", factor_list,"_", "factor")
+
+efa_results = cbind(var_names_efa_paste, efa_urica_out_results)
+efa_results = data.frame(efa_results)
+efa_results
+##################
+# Now try URICA as a whole
 
 efa_URICA_b_psych_1 = fa(URICA_b_psych, nfactors = 1, cor = "poly", correct = 0)
 fa.diagram(efa_URICA_b_psych_1)
