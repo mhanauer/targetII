@@ -6,27 +6,7 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-
-Target II
-Figure out ID
-merge data on matched pairs (check for people only in discharge and not follow-up)
-Identify the variables you want
-Check for errors in data entry
-Reverse score the variables
-Aggregate the composite variables
-Check psychometrics
-Get participant charactertics at base
-Get means and sds at base and discharge
-Plot mean changes 
-Identify differences in treatments
-Create IPW weights
-Check weights 
-Run regression with weights, non-inferiority, and run sensitivity
-
-
-
-
-
+Data cleaning
 ```{r}
 setwd("P:/Evaluation/TN Lives Count_Target2/Study 5_RELATE Enhanced Follow-up & Tech/3_Data/Database Exports & GSR Analysis/7.31.20/CSV Files")
 base = read.csv("Baseline Merged 7.31.20.csv", header = TRUE, na.strings = c(-7))
@@ -134,26 +114,21 @@ RPP_SIS_b = apply(base[,c(52:55,60:61)], 1, mean, na.rm = TRUE)
 
 ### To create ""readiness to change" score get average score across all four subscales then sum comtemplation, action, and maintenance and then subtract preconemplation.
 #https://habitslab.umbc.edu/urica-readiness-score/
-# 1,5,6
-Precomp_URICA_b = base[,c(62, 66:67)]
+Precomp_URICA_b = base[c("URICA1b", "URICA9b", "URICA11b")]
 Precomp_URICA_b = apply(Precomp_URICA_b, 1, mean, na.rm  = TRUE)
 
-Contemp_URICA_b = base[c("URICA2b", "URICA8b", "URICA10b")]
+Contemp_URICA_b = base[c("URICA4b", "URICA5b", "URICA7b")]
 Contemp_URICA_b = apply(Contemp_URICA_b, 1, mean, na.rm = TRUE)
 
-Action_URICA_b = base[c("URICA3b", "URICA9b", "URICA11b")]
+Action_URICA_b = base[c("URICA2b", "URICA3b", "URICA12b")]
 Action_URICA_b = apply(Action_URICA_b, 1, mean, na.rm = TRUE)
 
-Maintain_URICA_b = base[c("URICA4b", "URICA7b", "URICA12b")]
+Maintain_URICA_b = base[c("URICA6b", "URICA8b", "URICA10b")]
 Maintain_URICA_b = apply(Maintain_URICA_b, 1, mean, na.rm  = TRUE)
 
 RTC_URICA_b = (Contemp_URICA_b+Action_URICA_b+Maintain_URICA_b)-Precomp_URICA_b
 
-
-
-#### Create a psychometric version where you reverse score Precomp_URICA_b
-Precomp_URICA_b_reverse = base[,c(62, 66:67)]
-Precomp_URICA_b_reverse = 6-Precomp_URICA_b_reverse
+Precomp_URICA_b_reverse = 6-base[c("URICA1b", "URICA9b", "URICA11b")]
 
 SEASA_1_b = apply(base[,74:79], 1, mean, na.rm = TRUE)
 
@@ -237,21 +212,21 @@ RPP_SIS_d = apply(discharge[,c(32:35,40:41)], 1, mean, na.rm = TRUE)
 
 
 
-Precomp_URICA_d = discharge[c("URICA1d", "URICA5d", "URICA6d")]
+Precomp_URICA_d = discharge[c("URICA1d", "URICA9d", "URICA11d")]
 Precomp_URICA_d = apply(Precomp_URICA_d, 1, mean, na.rm  = TRUE)
 
-Contemp_URICA_d = discharge[c("URICA2d", "URICA8d", "URICA10d")]
+Contemp_URICA_d = discharge[c("URICA4d", "URICA5d", "URICA7d")]
 Contemp_URICA_d = apply(Contemp_URICA_d, 1, mean, na.rm = TRUE)
 
-Action_URICA_d = discharge[c("URICA3d", "URICA9d", "URICA11d")]
+Action_URICA_d = discharge[c("URICA2d", "URICA3d", "URICA12d")]
 Action_URICA_d = apply(Action_URICA_d, 1, mean, na.rm = TRUE)
 
-Maintain_URICA_d = discharge[c("URICA4d", "URICA7d", "URICA12d")]
+Maintain_URICA_d = discharge[c("URICA6d", "URICA8d", "URICA10d")]
 Maintain_URICA_d = apply(Maintain_URICA_d, 1, mean, na.rm  = TRUE)
 
 RTC_URICA_d = (Contemp_URICA_d+Action_URICA_d+Maintain_URICA_d)-Precomp_URICA_d
+Precomp_URICA_d_reverse = 6-discharge[c("URICA1d", "URICA9d", "URICA11d")]
 
-Precomp_URICA_d_reverse = 6-discharge[c("URICA1d", "URICA5d", "URICA6d")]
 
 
 
@@ -281,17 +256,15 @@ base_demos_all
 base_psych = base
 discharge_psych = discharge
 
-base = data.frame(base_demos_all, INQ_PB_b, INQ_TB_b, RAS_GSO_b, RAS_PCH_b, RAS_NDS_b, RAS_WAH_b, SD_SIS_b, RPP_SIS_b, SEASA_1_b, SEASA_2_b, RTC_URICA_b)
+base = data.frame(base_demos_all, INQ_PB_b, INQ_TB_b, RAS_GSO_b, RAS_PCH_b, RAS_NDS_b, RAS_WAH_b, SD_SIS_b, RPP_SIS_b, SEASA_1_b, SEASA_2_b, Precomp_URICA_b, Contemp_URICA_b, Action_URICA_b, RTC_URICA_b)
 
-discharge = data.frame(INQ_PB_d, INQ_TB_d, RAS_GSO_d, RAS_PCH_d, RAS_NDS_d, RAS_WAH_d ,SD_SIS_d, RPP_SIS_d, SEASA_1_d, SEASA_2_d, WAI_d, CSQ_d, RTC_URICA_d, id = discharge$id)
+discharge = data.frame(INQ_PB_d, INQ_TB_d, RAS_GSO_d, RAS_PCH_d, RAS_NDS_d, RAS_WAH_d ,SD_SIS_d, RPP_SIS_d, SEASA_1_d, SEASA_2_d, WAI_d, CSQ_d, Precomp_URICA_d, Contemp_URICA_d, Action_URICA_d, RTC_URICA_d, id = discharge$id)
 
 base_psych
 
 
 ```
-Check pyschometrics 
-
-SEASA_b_psych low alpha .65
+Check Alpha and EFA
 ```{r}
 library(psych)
 #########################
@@ -304,10 +277,26 @@ RAS_NDS_b_psych  = base_psych[,45:47]
 RAS_WAH_b_psych  = base_psych[,48:50]
 SD_SIS_b_psych  =  base_psych[,56:59]
 RPP_SIS_b_psych  = base_psych[,c(52:55,60:61)]
-URICA_b_psych  = base_psych[,c(63:65, 68:73)]
+URICA_b_psych  = base_psych[,c(63:69,71, 73)]
 URICA_b_psych = data.frame(URICA_b_psych, Precomp_URICA_b_reverse)
+URICA_b_psych
+Precomp_b_URICA_psych = base_psych[c("URICA1b", "URICA9b", "URICA11b")]
 
-base_psych = list(INQ_PB_b_psych, INQ_TB_b_psych, RAS_GSO_b_psych, RAS_PCH_b_psych, RAS_NDS_b_psych, RAS_WAH_b_psych, SD_SIS_b_psych, RPP_SIS_b_psych, URICA_b_psych)
+Contemp_b_URICA_psych = base_psych[c("URICA4b", "URICA5b", "URICA7b")]
+
+Action_b_URICA_psych = base_psych[c("URICA2b", "URICA3b", "URICA12b")]
+
+Maintain_b_URICA_psych = base_psych[c("URICA6b", "URICA8b", "URICA10b")]
+
+
+### Check this
+SEASA_1_d_psych = base_psych[,74:79]
+SEASA_2_d_psych = base_psych[,80:85]
+
+base_psych = list(INQ_PB_b_psych, INQ_TB_b_psych, RAS_GSO_b_psych, RAS_PCH_b_psych, RAS_NDS_b_psych, RAS_WAH_b_psych, SD_SIS_b_psych, RPP_SIS_b_psych, Precomp_b_URICA_psych, Contemp_b_URICA_psych, Action_b_URICA_psych, Maintain_b_URICA_psych, URICA_b_psych)
+
+
+base_psych
 
 base_psych_out = list()
 for(i in 1:length(base_psych)){
@@ -318,7 +307,8 @@ base_psych_out
 base_psych_out = data.frame(base_psych_out)
 base_psych_out = t(base_psych_out)
 base_psych_out = data.frame(alpha_poly = base_psych_out)
-var_names = c("INQ_PB_b_psych", "INQ_TB_b_psych", "RAS_GSO_b_psych", "RAS_PCH_b_psych", "RAS_NDS_b_psych", "RAS_WAH_b_psych", "SD_SIS_b_psych", "RPP_SIS_b_psych", "URICA_b_psych")
+var_names = c("INQ_PB_psych", "INQ_TB_psych", "RAS_GSO_psych", "RAS_PCH_psych", "RAS_NDS_psych", "RAS_WAH_psych", "SD_SIS_psych", "RPP_SIS_psych", "Precomp_URICA_psych", "Contemp_URICA_psych", "Action_URICA_psych", "Maintain_URICA_psych", "URICA_psych")
+
 base_psych_out = data.frame(var_names, base_psych_out)
 base_psych_out
 write.csv(base_psych_out, "base_psych_out.csv", row.names = FALSE)
@@ -332,15 +322,24 @@ RAS_WAH_d_psych = discharge_psych[,28:30]
 SD_SIS_d_psych =  discharge_psych[,36:39]
 RPP_SIS_d_psych = discharge_psych[,c(32:35,40:41)]
 URICA_d_psych = discharge_psych[,42:53]
-URICA_d_psych = discharge_psych[,c(43:45,48:53)]
+#base_psych[,c(63:69,71, 73)]
+URICA_d_psych = discharge_psych[,c(43:49,51,53)]
 URICA_d_psych = data.frame(URICA_d_psych, Precomp_URICA_d_reverse)
+Precomp_d_URICA_psych = discharge_psych[c("URICA1d", "URICA9d", "URICA11d")]
+
+Contemp_d_URICA_psych = discharge_psych[c("URICA4d", "URICA5d", "URICA7d")]
+
+Action_d_URICA_psych = discharge_psych[c("URICA2d", "URICA3d", "URICA12d")]
+
+Maintain_d_URICA_psych = discharge_psych[c("URICA6d", "URICA8d", "URICA10d")]
+
 SEASA_1_d_psych = discharge_psych[,54:59]
 SEASA_2_d_psych = discharge_psych[,60:65]
 
 WAI_d_psych = discharge_psych[,66:69]
 CSQ_d_psych = discharge_psych[,70:77]
 
-dis_psych = list(INQ_PB_d_psych, INQ_TB_d_psych, RAS_GSO_d_psych, RAS_PCH_d_psych, RAS_NDS_d_psych, RAS_WAH_d_psych, SD_SIS_d_psych, RPP_SIS_d_psych, URICA_b_psych)
+dis_psych = list(INQ_PB_d_psych, INQ_TB_d_psych, RAS_GSO_d_psych, RAS_PCH_d_psych, RAS_NDS_d_psych, RAS_WAH_d_psych, SD_SIS_d_psych, RPP_SIS_d_psych,Precomp_d_URICA_psych, Contemp_d_URICA_psych, Action_d_URICA_psych, Maintain_d_URICA_psych, URICA_d_psych)
 dis_psych_out = list()
 for(i in 1:length(dis_psych)){
  dis_psych_out[[i]]= (omega(dis_psych[[i]]))
@@ -387,12 +386,18 @@ for(i in 1:length(base_psych)){
 paran_dis_out
 
 
-
-
 ```
+```{r}
+URICA_b_psych_regular = URICA_b_psych
+URICA_b_psych_regular[10:12]= 6-URICA_b_psych[10:12]
+```
+
 SEASA pyschos
 Omega heir = .61
 ```{r}
+
+SEASA_b_psych = discharge_psych[,54:65]
+
 head(SEASA_b_psych)
 
 summary(omega(SEASA_b_psych))
@@ -424,8 +429,205 @@ paran(SEASA_b_psych_Complete, centile = 95, iterations = 1000, graph = TRUE, cfa
 summary(omega(SEASA_b_psych[1:6]))
 summary(omega(SEASA_b_psych[7:11]))
 ```
+URICA EFA at base and discharge
+Not sure 
+```{r}
+### Try EFA for all four constructs
+### Rep the list for as many times as you want 
+# So do all four constructs with 1 factors, then rep the names and the n's to 2 and repeat
 
 
+efa_URICA_b_psych_1 = fa(URICA_b_psych, nfactors = 1, cor = "poly", correct = 0)
+fa.diagram(efa_URICA_b_psych_1)
+
+efa_URICA_b_psych_2 = fa(URICA_b_psych,  nfactors = 2, cor = "poly", correct = 0)
+fa.diagram(efa_URICA_b_psych_2)
+
+efa_URICA_b_psych_3 = fa(URICA_b_psych,  nfactors = 3, cor = "poly", correct = 0)
+fa.diagram(efa_URICA_b_psych_3)
+
+efa_URICA_b_psych_4 = fa(URICA_b_psych,  nfactors = 4, cor = "poly", correct = 0)
+efa_URICA_b_psych_4
+fa.diagram(efa_URICA_b_psych_4)
+
+efa_URICA_b_psych_results_out = list()
+for(i in 1:length(efa_URICA_b_psych_results)){
+  efa_URICA_b_psych_results_out[[i]] = data.frame(TLI = efa_URICA_b_psych_results[[i]]$TLI, RMSEA = efa_URICA_b_psych_results[[i]]$RMSEA[1])
+}
+efa_URICA_b_psych_results_out = t(data.frame(t(unlist(efa_URICA_b_psych_results_out))))
+efa_URICA_b_psych_results_out
+
+
+write.csv(efa_URICA_b_psych_results_out, "efa_URICA_b_psych_results_out.csv")
+
+anova(efa_URICA_b_psych_1, efa_URICA_b_psych_2)
+anova(efa_URICA_b_psych_2, efa_URICA_b_psych_3)
+anova(efa_URICA_b_psych_3, efa_URICA_b_psych_4)
+```
+
+
+Try a CFA with base with single and second order 
+                            
+```{r}
+library(lavaan)
+urica_base_reverse_poly_single <- 'PC  =~ URICA1b + URICA9b + URICA11b
+              C =~ URICA4b + URICA5b + URICA7b
+              A =~ URICA2b + URICA3b + URICA12b
+              M =~ URICA6b + URICA8b + URICA10b'
+fit_urica_base_reverse_poly_single <- cfa(urica_base_reverse_poly_single, data=URICA_b_psych, estimator="WLSMV",
+                 ordered=c( "URICA1b","URICA9b", "URICA11b","URICA4b",
+                            "URICA5b","URICA7b","URICA2b","URICA3b","URICA12b",    
+                            "URICA6b", "URICA8b", "URICA10b"))
+
+cfa_base_reverse_poly_single <-data.matrix(fitmeasures(fit_urica_base, fit.measures = c("chisq.scaled","df.scaled","pvalue.scaled", "rmsea.scaled", "cfi.scaled", "tli.scaled"), digits=3))
+
+cfa_base_reverse_poly_single = round(cfa_base_reverse_poly_single, digits=3)
+
+urica_base_reverse_poly_second <- 'PC  =~ URICA1b + URICA9b + URICA11b
+              C =~ URICA4b + URICA5b + URICA7b
+              A =~ URICA2b + URICA3b + URICA12b
+              M =~ URICA6b + URICA8b + URICA10b
+              RTC =~ 1*PC + 1*C + 1*A + 1*M
+              RTC ~~ RTC'
+fit_urica_base_reverse_poly_second <- cfa(urica_base_reverse_poly_second, data=URICA_b_psych, estimator="WLSMV",
+                 ordered=c( "URICA1b","URICA9b", "URICA11b","URICA4b",
+                            "URICA5b","URICA7b","URICA2b","URICA3b","URICA12b",    
+                            "URICA6b", "URICA8b", "URICA10b" ))
+
+summary(fit_urica_base_reverse_poly_second, fit.measures=TRUE, standardized=TRUE)
+cfa_base_reverse_poly_second <-data.matrix(fitmeasures(fit_urica_base_reverse_poly_second, fit.measures = c("chisq.scaled","df.scaled","pvalue.scaled", "rmsea.scaled", "cfi.scaled", "tli.scaled"), digits=3))
+
+cfa_base_reverse_poly_second = round(cfa_base_reverse_poly_second, digits=3)
+
+### Now try without weighted just regular but still reversed#####################################
+urica_base_reverse_single <- 'PC  =~ URICA1b + URICA9b + URICA11b
+              C =~ URICA4b + URICA5b + URICA7b
+              A =~ URICA2b + URICA3b + URICA12b
+              M =~ URICA6b + URICA8b + URICA10b'
+fit_urica_base_reverse_single <- cfa(urica_base_reverse_single, data=URICA_b_psych)
+summary(fit_urica_base_reverse_single)
+cfa_base_reverse_single <-data.matrix(fitmeasures(fit_urica_base, fit.measures = c("chisq.scaled","df.scaled","pvalue.scaled", "rmsea.scaled", "cfi.scaled", "tli.scaled"), digits=3))
+
+cfa_base_reverse_single = round(cfa_base_reverse_single, digits=3)
+
+urica_base_reverse_second <- 'PC  =~ URICA1b + URICA9b + URICA11b
+              C =~ URICA4b + URICA5b + URICA7b
+              A =~ URICA2b + URICA3b + URICA12b
+              M =~ URICA6b + URICA8b + URICA10b
+              RTC =~ 1*PC + 1*C + 1*A + 1*M
+              RTC ~~ RTC'
+fit_urica_base_reverse_second <- cfa(urica_base_reverse_second, data=URICA_b_psych)
+summary(fit_urica_base_reverse_second, fit.measures=TRUE, standardized=TRUE)
+cfa_base_reverse_second <-data.matrix(fitmeasures(fit_urica_base_reverse_second, fit.measures = c("chisq.scaled","df.scaled","pvalue.scaled", "rmsea.scaled", "cfi.scaled", "tli.scaled"), digits=3))
+
+cfa_base_reverse_second = round(cfa_base_reverse_second, digits=3)
+
+
+#### Try without reversing, but still weighting
+#URICA_b_psych_regular
+urica_base_poly_single <- 'PC  =~ URICA1b + URICA9b + URICA11b
+              C =~ URICA4b + URICA5b + URICA7b
+              A =~ URICA2b + URICA3b + URICA12b
+              M =~ URICA6b + URICA8b + URICA10b'
+fit_urica_base_poly_single <- cfa(urica_base_poly_single, data=URICA_b_psych_regular, estimator="WLSMV",
+                                          ordered=c( "URICA1b","URICA9b", "URICA11b","URICA4b",
+                                                     "URICA5b","URICA7b","URICA2b","URICA3b","URICA12b",    
+                                                     "URICA6b", "URICA8b", "URICA10b" ))
+
+cfa_base_poly_single <-data.matrix(fitmeasures(fit_urica_base, fit.measures = c("chisq.scaled","df.scaled","pvalue.scaled", "rmsea.scaled", "cfi.scaled", "tli.scaled"), digits=3))
+
+cfa_base_poly_single = round(cfa_base_poly_single, digits=3)
+
+urica_base_poly_second <- 'PC  =~ URICA1b + URICA9b + URICA11b
+              C =~ URICA4b + URICA5b + URICA7b
+              A =~ URICA2b + URICA3b + URICA12b
+              M =~ URICA6b + URICA8b + URICA10b
+              RTC =~ 1*PC + 1*C + 1*A + 1*M
+              RTC ~~ RTC'
+fit_urica_base_poly_second <- cfa(urica_base_poly_second, data=URICA_b_psych_regular, estimator="WLSMV",
+                                          ordered=c( "URICA1b","URICA9b", "URICA11b","URICA4b",
+                                                     "URICA5b","URICA7b","URICA2b","URICA3b","URICA12b",    
+                                                     "URICA6b", "URICA8b", "URICA10b" ))
+
+cfa_base_poly_second <-data.matrix(fitmeasures(fit_urica_base_poly_second, fit.measures = c("chisq.scaled","df.scaled","pvalue.scaled", "rmsea.scaled", "cfi.scaled", "tli.scaled"), digits=3))
+
+### No weighting without reverse
+urica_base_single <- 'PC  =~ URICA1b + URICA9b + URICA11b
+              C =~ URICA4b + URICA5b + URICA7b
+              A =~ URICA2b + URICA3b + URICA12b
+              M =~ URICA6b + URICA8b + URICA10b'
+fit_urica_base_single <- cfa(urica_base_single, data=URICA_b_psych_regular)
+
+summary(fit_urica_base_single, fit.measures=TRUE, standardized=TRUE)
+
+cfa_base_single <-data.matrix(fitmeasures(fit_urica_base, fit.measures = c("chisq.scaled","df.scaled","pvalue.scaled", "rmsea.scaled", "cfi.scaled", "tli.scaled"), digits=3))
+
+cfa_base_single = round(cfa_base_single, digits=3)
+
+urica_base_second <- 'PC  =~ URICA1b + URICA9b + URICA11b
+              C =~ URICA4b + URICA5b + URICA7b
+              A =~ URICA2b + URICA3b + URICA12b
+              M =~ URICA6b + URICA8b + URICA10b
+              RTC =~ 1*PC + 1*C + 1*A + 1*M
+              RTC ~~ RTC'
+fit_urica_base_second <- cfa(urica_base_second, data=URICA_b_psych_regular)
+fit_urica_base_second = summary(fit_urica_base_second, fit.measures=TRUE, standardized=TRUE)
+fit_urica_base_second$FIT[c("pvalue", "cfi", "tli", "rmsea")]
+
+
+
+```
+All ones consistent with literature produce errors for CFAs
+Try single constructs 
+```{r}
+### Try single and with weighting and reverse
+urica_base_reverse_poly_one <- 'RTC  =~ URICA1b + URICA9b + URICA11b +URICA4b + URICA5b + URICA7b +URICA2b + URICA3b + URICA12b +URICA6b + URICA8b + URICA10b'
+fit_urica_base_reverse_poly_one <- cfa(urica_base_reverse_poly_one, data=URICA_b_psych_regular, estimator="WLSMV", ordered=c( "URICA1b","URICA9b","URICA11b","URICA4b","URICA5b","URICA7b","URICA2b","URICA3b","URICA12b","URICA6b", "URICA8b", "URICA10b" ))
+
+cfa_base_reverse_poly_one = summary(fit_urica_base_reverse_poly_one, fit.measures=TRUE,standardized=TRUE)
+cfa_base_reverse_poly_one = cfa_base_reverse_poly_one$FIT[c("pvalue.scaled", "rmsea.scaled", "cfi.scaled", "tli.scaled")]
+
+# Try single and second construct without reverse###############################
+urica_base_poly_one <- 'RTC  =~ URICA1b + URICA9b + URICA11b +URICA4b + URICA5b + URICA7b +URICA2b + URICA3b + URICA12b +URICA6b + URICA8b + URICA10b'
+fit_urica_base_poly_one <- cfa(urica_base_poly_one, data=URICA_b_psych, estimator="WLSMV",
+                                  ordered=TRUE)
+
+cfa_base_poly_one = summary(fit_urica_base_poly_one, fit.measures=TRUE,standardized=TRUE)
+cfa_base_poly_one = cfa_base_poly_one$FIT[c("pvalue.scaled", "rmsea.scaled", "cfi.scaled", "tli.scaled")]
+
+########## Doesn't matter if you reverse or not
+cfa_base_poly_one
+```
+Try CFA with individual constructs
+Seems like PC is the problem construct
+Not working
+```{r}
+
+pc = 'PC  =~ URICA1b + URICA9b + URICA11b'
+c = 'C =~ URICA4b + URICA5b + URICA7b'
+a = 'A =~ URICA2b + URICA3b + URICA12b'
+m =  'M =~ URICA6b + URICA8b + URICA10b'
+
+con_list = list(c, a, m)
+con_results = list()
+
+for(i in 1:length(con_list)){
+con_results[[i]] = cfa(con_list[[i]], data=URICA_b_psych_regular, estimator="WLSMV",ordered=TRUE)
+con_results[[i]] = summary(con_results[[i]], fit.measures=TRUE,standardized=TRUE)
+#con_results[[i]] = con_results[[i]]$FIT[c("pvalue.scaled", "rmsea.scaled", "cfi.scaled", "tli.scaled")]
+}
+con_results[[1]]$FIT
+#### Try without PC
+con_list_no_pc = list(c, a, m)
+con_results_no_pc = list()
+for(i in 1:length(con_list_no_pc)){
+con_results_no_pc[[i]] = cfa(con_list_no_pc[[i]], data=URICA_b_psych_regular, estimator="WLSMV",ordered=TRUE)
+#con_results_no_pc[[i]] = summary(con_results, fit.measures=TRUE,standardized=TRUE)
+#con_results_no_pc[[i]] = con_results$FIT[c("pvalue.scaled", "rmsea.scaled", "cfi.scaled", "tli.scaled")]
+}
+con_results_no_pc
+
+```
 Merge the data
 ```{r}
 dim(base)
@@ -461,6 +663,15 @@ var_names = c("INQ_PB_psych", "INQ_TB_psych", "RAS_GSO_psych", "RAS_PCH_psych", 
 out_dat = data.frame(var_names, retest_reliability = out_dat$out_dat)
 out_dat$retest_reliability = round(out_dat$retest_reliability,2)
 write.csv(out_dat, "out_dat.csv", row.names = FALSE)
+
+cor(target_2_dat_psych_pre$INQ_PB_b, target_2_dat_psych_post$INQ_PB_d, use = "pairwise.complete.obs")
+```
+Now get correlation between all the measures
+```{r}
+library(corrplot)
+cor_mat = cor(target_2_dat[,-c(1:13, 35,36)], use = "pairwise.complete.obs")
+
+corrplot(cor_mat, type = "upper", insig = "blank")
 ```
 
 
