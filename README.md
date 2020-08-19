@@ -127,6 +127,7 @@ Maintain_URICA_b = base[c("URICA6b", "URICA8b", "URICA10b")]
 Maintain_URICA_b = apply(Maintain_URICA_b, 1, mean, na.rm  = TRUE)
 
 RTC_URICA_b = (Contemp_URICA_b+Action_URICA_b+Maintain_URICA_b)-Precomp_URICA_b
+CA_URICA_b = (Action_URICA_b-Contemp_URICA_b)
 
 Precomp_URICA_b_reverse = 6-base[c("URICA1b", "URICA9b", "URICA11b")]
 
@@ -225,6 +226,8 @@ Maintain_URICA_d = discharge[c("URICA6d", "URICA8d", "URICA10d")]
 Maintain_URICA_d = apply(Maintain_URICA_d, 1, mean, na.rm  = TRUE)
 
 RTC_URICA_d = (Contemp_URICA_d+Action_URICA_d+Maintain_URICA_d)-Precomp_URICA_d
+CA_URICA_d = (Action_URICA_d-Contemp_URICA_d)
+
 Precomp_URICA_d_reverse = 6-discharge[c("URICA1d", "URICA9d", "URICA11d")]
 
 
@@ -256,15 +259,15 @@ base_demos_all
 base_psych = base
 discharge_psych = discharge
 
-base = data.frame(base_demos_all, INQ_PB_b, INQ_TB_b, RAS_GSO_b, RAS_PCH_b, RAS_NDS_b, RAS_WAH_b, SD_SIS_b, RPP_SIS_b, SEASA_1_b, SEASA_2_b, Precomp_URICA_b, Contemp_URICA_b, Action_URICA_b, RTC_URICA_b)
+base = data.frame(base_demos_all, INQ_PB_b, INQ_TB_b, RAS_GSO_b, RAS_PCH_b, RAS_NDS_b, RAS_WAH_b, SD_SIS_b, RPP_SIS_b, SEASA_1_b, SEASA_2_b, Precomp_URICA_b, Contemp_URICA_b, Action_URICA_b, Maintain_URICA_b, CA_URICA_b, RTC_URICA_b)
 
-discharge = data.frame(INQ_PB_d, INQ_TB_d, RAS_GSO_d, RAS_PCH_d, RAS_NDS_d, RAS_WAH_d ,SD_SIS_d, RPP_SIS_d, SEASA_1_d, SEASA_2_d, WAI_d, CSQ_d, Precomp_URICA_d, Contemp_URICA_d, Action_URICA_d, RTC_URICA_d, id = discharge$id)
+discharge = data.frame(INQ_PB_d, INQ_TB_d, RAS_GSO_d, RAS_PCH_d, RAS_NDS_d, RAS_WAH_d ,SD_SIS_d, RPP_SIS_d, SEASA_1_d, SEASA_2_d, WAI_d, CSQ_d, Precomp_URICA_d, Contemp_URICA_d, Action_URICA_d, Maintain_URICA_d, CA_URICA_d, RTC_URICA_d, id = discharge$id)
 
-base_psych
-
+dim(base_psych)
+dim(discharge)
 
 ```
-Check Alpha and EFA
+Alphas, parallel test, and map test for all constructs
 ```{r}
 library(psych)
 #########################
@@ -356,7 +359,7 @@ write.csv(dis_psych_out, "dis_psych_out.csv", row.names = FALSE)
 
 
 
-#### EFA 
+#### map 
 library(paran)
 map_base_out = list()
 for(i in 1:length(base_psych)){
@@ -385,15 +388,38 @@ for(i in 1:length(base_psych)){
 }
 paran_dis_out
 
+#EFA results for single consturcts at base and discharge
+base_psych
+### You need a list of base and discharge and then different data sets for each
+single_base_out = list()
+for(i in 1:length(base_psych)){
+  single_base_out[[i]]= fa(base_psych[[i]], nfactors = 1, cor = "poly", correct = 0)
+  single_base_out[[i]] = data.frame(TLI = single_base_out[[i]]$TLI)
+  single_base_out[[i]] = round(single_base_out[[i]],2)
+}
+single_base_out = unlist(single_base_out)
+single_base_out
+var_names = c("INQ_PB_psych", "INQ_TB_psych", "RAS_GSO_psych", "RAS_PCH_psych", "RAS_NDS_psych", "RAS_WAH_psych", "SD_SIS_psych", "RPP_SIS_psych", "Precomp_URICA_psych", "Contemp_URICA_psych", "Action_URICA_psych", "Maintain_URICA_psych", "URICA_psych")
+single_base_out = data.frame(var_names, TLI = single_base_out)
+single_base_out
+write.csv(single_base_out, "single_base_out.csv", row.names = FALSE)
+
+single_dis_out = list()
+for(i in 1:length(dis_psych)){
+  single_dis_out[[i]]= fa(dis_psych[[i]], nfactors = 1, cor = "poly", correct = 0)
+  single_dis_out[[i]] = data.frame(TLI = single_dis_out[[i]]$TLI)
+  single_dis_out[[i]] = round(single_dis_out[[i]],2)
+}
+single_dis_out = unlist(single_dis_out)
+single_dis_out
+var_names = c("INQ_PB_psych", "INQ_TB_psych", "RAS_GSO_psych", "RAS_PCH_psych", "RAS_NDS_psych", "RAS_WAH_psych", "SD_SIS_psych", "RPP_SIS_psych", "Precomp_URICA_psych", "Contemp_URICA_psych", "Action_URICA_psych", "Maintain_URICA_psych", "URICA_psych")
+single_dis_out = data.frame(var_names, TLI = single_dis_out)
+single_dis_out
+write.csv(single_dis_out, "single_dis_out.csv", row.names = FALSE)
+
 
 ```
-```{r}
-URICA_b_psych_regular = URICA_b_psych
-URICA_b_psych_regular[10:12]= 6-URICA_b_psych[10:12]
-```
-
 SEASA pyschos
-Omega heir = .61
 ```{r}
 
 SEASA_b_psych = discharge_psych[,54:65]
@@ -429,13 +455,14 @@ paran(SEASA_b_psych_Complete, centile = 95, iterations = 1000, graph = TRUE, cfa
 summary(omega(SEASA_b_psych[1:6]))
 summary(omega(SEASA_b_psych[7:11]))
 ```
-URICA EFA at base and discharge
-Not sure 
+URICA EFA at base and discharge 
 ```{r}
 
-dat_list = list(Precomp_b_URICA_psych, Contemp_b_URICA_psych, Action_b_URICA_psych, Maintain_b_URICA_psych)
+
+dat_list = list(Precomp_b_URICA_psych, Contemp_b_URICA_psych, Action_b_URICA_psych, Maintain_b_URICA_psych, Precomp_d_URICA_psych, Contemp_d_URICA_psych, Action_d_URICA_psych, Maintain_d_URICA_psych)
 dat_list = rep(dat_list, 3)
-factor_list = rep(1:3, each = 4)
+
+factor_list = rep(1:3, each = 8)
 factor_list = as.list(factor_list)
 factor_list
 efa_urica_out = list()
@@ -449,7 +476,7 @@ for(i in 1:length(dat_list)){
 }
 efa_urica_out_results = unlist(efa_urica_out_results)
 
-var_names_efa = c("Precomp_b_URICA_psych", "Contemp_b_URICA_psych", "Action_b_URICA_psych", "Maintain_b_URICA_psych")
+var_names_efa = c("Precomp_b_URICA_psych", "Contemp_b_URICA_psych", "Action_b_URICA_psych", "Maintain_b_URICA_psych", "Precomp_d_URICA_psych", "Contemp_d_URICA_psych", "Action_d_URICA_psych", "Maintain_d_URICA_psych")
 var_names_efa = rep(var_names_efa, 3)
 
 var_names_efa_paste= paste0(var_names_efa, "_", factor_list,"_", "factor")
@@ -457,6 +484,7 @@ var_names_efa_paste= paste0(var_names_efa, "_", factor_list,"_", "factor")
 efa_results = cbind(var_names_efa_paste, efa_urica_out_results)
 efa_results = data.frame(efa_results)
 efa_results
+write.csv(efa_results, "efa_results.csv", row.names = FALSE)
 ##################
 # Now try URICA as a whole
 
@@ -473,26 +501,118 @@ efa_URICA_b_psych_4 = fa(URICA_b_psych,  nfactors = 4, cor = "poly", correct = 0
 efa_URICA_b_psych_4
 fa.diagram(efa_URICA_b_psych_4)
 
+efa_URICA_b_psych_results = list(efa_URICA_b_psych_1, efa_URICA_b_psych_2, efa_URICA_b_psych_3, efa_URICA_b_psych_4)
+
 efa_URICA_b_psych_results_out = list()
 for(i in 1:length(efa_URICA_b_psych_results)){
   efa_URICA_b_psych_results_out[[i]] = data.frame(TLI = efa_URICA_b_psych_results[[i]]$TLI, RMSEA = efa_URICA_b_psych_results[[i]]$RMSEA[1])
 }
-efa_URICA_b_psych_results_out = t(data.frame(t(unlist(efa_URICA_b_psych_results_out))))
 efa_URICA_b_psych_results_out
-
-
-write.csv(efa_URICA_b_psych_results_out, "efa_URICA_b_psych_results_out.csv")
+efa_URICA_b_psych_results_out = unlist(efa_URICA_b_psych_results_out)
+efa_URICA_d_psych_results_out
+efa_URICA_b_psych_results_out = matrix(efa_URICA_b_psych_results_out, ncol= 2, byrow = TRUE)
+colnames(efa_URICA_b_psych_results_out) = c("TLI", "RMSEA")
+var_names_urica = c("one_factor", "two_factor", "three_factor", "four_factor")
+efa_URICA_b_psych_results_out = data.frame(var_names_urica, round(efa_URICA_b_psych_results_out,2))
+write.csv(efa_URICA_b_psych_results_out, "efa_URICA_b_psych_results_base_out.csv", row.names = FALSE)
 
 anova(efa_URICA_b_psych_1, efa_URICA_b_psych_2)
 anova(efa_URICA_b_psych_2, efa_URICA_b_psych_3)
 anova(efa_URICA_b_psych_3, efa_URICA_b_psych_4)
+
+############ Now discharge
+efa_URICA_d_psych_1 = fa(URICA_d_psych, nfactors = 1, cor = "poly", correct = 0)
+fa.diagram(efa_URICA_d_psych_1)
+
+efa_URICA_d_psych_2 = fa(URICA_d_psych,  nfactors = 2, cor = "poly", correct = 0)
+fa.diagram(efa_URICA_d_psych_2)
+
+efa_URICA_d_psych_3 = fa(URICA_d_psych,  nfactors = 3, cor = "poly", correct = 0)
+fa.diagram(efa_URICA_d_psych_3)
+
+efa_URICA_d_psych_4 = fa(URICA_d_psych,  nfactors = 4, cor = "poly", correct = 0)
+efa_URICA_d_psych_4
+fa.diagram(efa_URICA_d_psych_4)
+
+efa_URICA_d_psych_results = list(efa_URICA_d_psych_1, efa_URICA_d_psych_2, efa_URICA_d_psych_3, efa_URICA_d_psych_4)
+
+efa_URICA_d_psych_results_out = list()
+for(i in 1:length(efa_URICA_d_psych_results)){
+  efa_URICA_d_psych_results_out[[i]] = data.frame(TLI = efa_URICA_d_psych_results[[i]]$TLI, RMSEA = efa_URICA_d_psych_results[[i]]$RMSEA[1])
+}
+efa_URICA_d_psych_results_out
+efa_URICA_d_psych_results_out = unlist(efa_URICA_d_psych_results_out)
+efa_URICA_d_psych_results_out
+efa_URICA_d_psych_results_out = matrix(efa_URICA_d_psych_results_out, ncol= 2, byrow = TRUE)
+colnames(efa_URICA_d_psych_results_out) = c("TLI", "RMSEA")
+var_names_urica = c("one_factor", "two_factor", "three_factor", "four_factor")
+efa_URICA_d_psych_results_out = data.frame(var_names_urica, round(efa_URICA_d_psych_results_out,2))
+write.csv(efa_URICA_d_psych_results_out, "efa_URICA_d_psych_results_dis_out.csv", row.names = FALSE)
+
+anova(efa_URICA_d_psych_1, efa_URICA_d_psych_2)
+anova(efa_URICA_d_psych_2, efa_URICA_d_psych_3)
+anova(efa_URICA_d_psych_3, efa_URICA_d_psych_4)
+
+```
+Run all exploratory analyses for URICA without PC
+```{r}
+### Create baseline and discharge URICA_no_pc
+URICA_no_pc_b = data.frame(Contemp_b_URICA_psych, Action_b_URICA_psych, Maintain_b_URICA_psych)
+URICA_no_pc_d = data.frame(Contemp_d_URICA_psych, Action_d_URICA_psych, Maintain_d_URICA_psych)
+dat_list = list(URICA_no_pc_b, URICA_no_pc_d)
+dat_list = rep(dat_list, 3)
+
+factor_list = rep(1:3, each = 2)
+factor_list = as.list(factor_list)
+factor_list
+efa_urica_out = list()
+diag_out = list()
+efa_urica_out_results = list()
+map_urica_out = list()
+par_urica_out = list()
+
+for(i in 1:length(dat_list)){
+  efa_urica_out[[i]] = fa(dat_list[[i]], nfactors = factor_list[[i]], cor = "poly", correct = 0)
+  efa_urica_out_results[[i]] = data.frame(TLI = efa_urica_out[[i]]$TLI, efa_urica_out[[i]]$RMSEA[1])
+  efa_urica_out_results[[i]] = round(efa_urica_out_results[[i]],2)
+  map_urica_out[[i]] = vss(dat_list[[i]], n = 3, rotate = "oblimin", fm = "mle")
+}
+
+map_urica_out
+
+paran_base_out = list()
+for(i in 1:length(base_psych)){
+  paran_base_out[[i]] = na.omit(base_psych[[i]])
+  paran_base_out[[i]] = paran(paran_base_out[[i]], centile = 95, iterations = 1000, graph = TRUE, cfa = TRUE)
+}
+paran_base_out
+
+
+#### EFA data cleaning
+efa_urica_out_results = unlist(efa_urica_out_results)
+efa_urica_out_results = matrix(efa_urica_out_results, ncol = 2, byrow= TRUE)
+colnames(efa_urica_out_results) = c("TLI", "RMSEA")
+var_names_efa = c("URICA_no_pc_b", "URICA_no_pc_d")
+var_names_efa = rep(var_names_efa, 3)
+
+var_names_efa_paste= paste0(var_names_efa, "_", factor_list,"_", "factor")
+
+efa_results = cbind(var_names_efa_paste, efa_urica_out_results)
+efa_results = data.frame(efa_results)
+efa_results
+write.csv(efa_results, "efa_results.csv", row.names = FALSE)
+
+
 ```
 
 
-Try a CFA with base with single and second order 
+
+CFA with single and second order weighted and unweighted and reversed and unreversed
                             
 ```{r}
 library(lavaan)
+URICA_b_psych_regular = URICA_b_psych
+URICA_b_psych_regular[10:12]= 6-URICA_b_psych[10:12]
 urica_base_reverse_poly_single <- 'PC  =~ URICA1b + URICA9b + URICA11b
               C =~ URICA4b + URICA5b + URICA7b
               A =~ URICA2b + URICA3b + URICA12b
@@ -657,21 +777,24 @@ dim(base)
 base
 dim(discharge)
 discharge
-target_2_dat = merge(base, discharge, by = "id")
+target_2_dat = merge(base, discharge, all.x = TRUE, by = "id")
 dim(target_2_dat)
+library(MissMech)
+library(naniar)
 
-
-
+var_missing =  miss_var_summary(target_2_dat, order = FALSE)
+write.csv(var_missing, "var_missing.csv", row.names = FALSE)
 ```
 Now get test retest reliability 
+#Check this
 ```{r}
 #### Get test retest reliabilities with spearman correlation
 ### Create pre and post total scores assessments
 dim(target_2_dat)
-target_2_dat_psych = target_2_dat[,-c(1:13, 35,36)]
-target_2_dat_psych_pre =  target_2_dat_psych[1:11]
+target_2_dat_psych = target_2_dat[,-c(1:13, 40,41)]
+target_2_dat_psych_pre =  target_2_dat_psych[1:16]
 target_2_dat_psych_pre = as.list(target_2_dat_psych_pre)
-target_2_dat_psych_post = target_2_dat_psych[12:22]
+target_2_dat_psych_post = target_2_dat_psych[17:32]
 target_2_dat_psych_post = as.list(target_2_dat_psych_post)
 retest_out = list()
 
@@ -682,7 +805,7 @@ for(i in 1:length(target_2_dat_psych_pre)){
 out_dat = data.frame(out_dat)
 out_dat = t(out_dat)
 out_dat = data.frame(out_dat)
-var_names = c("INQ_PB_psych", "INQ_TB_psych", "RAS_GSO_psych", "RAS_PCH_psych", "RAS_NDS_psych", "RAS_WAH_psych", "SD_SIS_psych", "RPP_SIS_psych", "SEASA_1", "SEASA_2", "URICA_psych")
+var_names = c("INQ_PB_psych", "INQ_TB_psych", "RAS_GSO_psych", "RAS_PCH_psych", "RAS_NDS_psych", "RAS_WAH_psych", "SD_SIS_psych", "RPP_SIS_psych", "SEASA_1", "SEASA_2", "Precomp_URICA", "Contemp_URICA", "Action_URICA", "Main_URICA", "CA_psych", "URICA_psych")
 out_dat = data.frame(var_names, retest_reliability = out_dat$out_dat)
 out_dat$retest_reliability = round(out_dat$retest_reliability,2)
 write.csv(out_dat, "out_dat.csv", row.names = FALSE)
@@ -692,7 +815,7 @@ cor(target_2_dat_psych_pre$INQ_PB_b, target_2_dat_psych_post$INQ_PB_d, use = "pa
 Now get correlation between all the measures
 ```{r}
 library(corrplot)
-cor_mat = cor(target_2_dat[,-c(1:13, 35,36)], use = "pairwise.complete.obs")
+cor_mat = cor(target_2_dat[,-c(1:13, 40,41)], use = "pairwise.complete.obs")
 
 corrplot(cor_mat, type = "upper", insig = "blank")
 ```
@@ -703,7 +826,9 @@ Check race if all NA then may be NA, but you don't have all the races
 
 Get descriptives ready
 ```{r}
-target_2_dat[,9:13] = apply(target_2_dat[,9:13], 2, function(x){as.factor(x)})
+dim(base)
+dim(discharge)
+target_2_dat[3:13] = apply(target_2_dat[,3:13], 2, function(x){as.factor(x)})
 target_2_dat$Age = as.numeric(target_2_dat$Age)
 part_charac =  prettyR::describe(target_2_dat[-c(1)])
 num_charac = data.frame(part_charac$Numeric)
@@ -716,7 +841,7 @@ write.csv(num_charac, "num_charac.csv")
 fac_charac = data.frame(part_charac$Factor)
 fac_charac = round(fac_charac,2)
 fac_charac = t(fac_charac)
-fac_charac
+write.csv(fac_charac, "fac_charac.csv")
 ```
 
 
