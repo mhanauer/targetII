@@ -232,7 +232,6 @@ Precomp_URICA_d_reverse = 6-discharge[c("URICA1d", "URICA9d", "URICA11d")]
 
 
 
-
 SEASA_1_d = apply(discharge[,54:59], 1, mean, na.rm = TRUE)
 
 SEASA_2_d = apply(discharge[,60:65], 1, mean, na.rm = TRUE)
@@ -457,34 +456,28 @@ summary(omega(SEASA_b_psych[7:11]))
 ```
 URICA EFA at base and discharge 
 ```{r}
-
-
+# Giving you an error for solo factors
+#fa(Precomp_b_URICA_psych, nfactors = 1, cor = "poly", correct = 0)
 dat_list = list(Precomp_b_URICA_psych, Contemp_b_URICA_psych, Action_b_URICA_psych, Maintain_b_URICA_psych, Precomp_d_URICA_psych, Contemp_d_URICA_psych, Action_d_URICA_psych, Maintain_d_URICA_psych)
-dat_list = rep(dat_list, 3)
 
-factor_list = rep(1:3, each = 8)
-factor_list = as.list(factor_list)
-factor_list
 efa_urica_out = list()
 diag_out = list()
 efa_urica_out_results = list()
 
 for(i in 1:length(dat_list)){
-  efa_urica_out[[i]] = fa(dat_list[[i]], nfactors = factor_list[[i]], cor = "poly", correct = 0)
+  efa_urica_out[[i]] = fa(dat_list[[i]], nfactors = 1, cor = "poly", correct = 0)
    efa_urica_out_results[[i]] = data.frame(TLI = efa_urica_out[[i]]$TLI)
    efa_urica_out_results[[i]] = round(efa_urica_out_results[[i]],2)
 }
 efa_urica_out_results = unlist(efa_urica_out_results)
 
 var_names_efa = c("Precomp_b_URICA_psych", "Contemp_b_URICA_psych", "Action_b_URICA_psych", "Maintain_b_URICA_psych", "Precomp_d_URICA_psych", "Contemp_d_URICA_psych", "Action_d_URICA_psych", "Maintain_d_URICA_psych")
-var_names_efa = rep(var_names_efa, 3)
 
-var_names_efa_paste= paste0(var_names_efa, "_", factor_list,"_", "factor")
 
 efa_results = cbind(var_names_efa_paste, efa_urica_out_results)
 efa_results = data.frame(efa_results)
 efa_results
-write.csv(efa_results, "efa_results.csv", row.names = FALSE)
+write.csv(efa_results, "efa_results_urica_subscales.csv", row.names = FALSE)
 ##################
 # Now try URICA as a whole
 
@@ -509,7 +502,6 @@ for(i in 1:length(efa_URICA_b_psych_results)){
 }
 efa_URICA_b_psych_results_out
 efa_URICA_b_psych_results_out = unlist(efa_URICA_b_psych_results_out)
-efa_URICA_d_psych_results_out
 efa_URICA_b_psych_results_out = matrix(efa_URICA_b_psych_results_out, ncol= 2, byrow = TRUE)
 colnames(efa_URICA_b_psych_results_out) = c("TLI", "RMSEA")
 var_names_urica = c("one_factor", "two_factor", "three_factor", "four_factor")
@@ -602,6 +594,8 @@ efa_results = data.frame(efa_results)
 efa_results
 write.csv(efa_results, "efa_results.csv", row.names = FALSE)
 
+#Check that is working compare with first analysis
+#fa(URICA_no_pc_b, nfactors = 1, cor = "poly", correct = 0)
 
 ```
 
