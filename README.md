@@ -806,12 +806,56 @@ write.csv(out_dat, "out_dat.csv", row.names = FALSE)
 
 cor(target_2_dat_psych_pre$INQ_PB_b, target_2_dat_psych_post$INQ_PB_d, use = "pairwise.complete.obs")
 ```
+Evaluate if outcomes are normally distributed
+```{r}
+
+hist_out = list()
+col_names = colnames(target_2_dat[,-c(1:13, 40,41)])
+hist_dat_outcomes=  as.list(target_2_dat[,-c(1:13, 40,41)])
+colnames(hist_dat_outcomes[1])
+for(i in 1:length(hist_dat_outcomes)){
+  hist_out[[i]] = hist(hist_dat_outcomes[[i]], main =paste("Histogram of" , col_names[[i]]))
+}
+
+```
+
 Now get correlation between all the measures
 ```{r}
 library(corrplot)
-cor_mat = cor(target_2_dat[,-c(1:13, 40,41)], use = "pairwise.complete.obs")
+cor_mat = cor(target_2_dat[,-c(1:13, 40,41)], use = "pairwise.complete.obs", method = "spearman")
 
 corrplot(cor_mat, type = "upper", insig = "blank")
+```
+Specific correlations
+```{r}
+seasa_cor = target_2_dat[c("SEASA_1_b", "SEASA_2_b", "SEASA_1_d", "SEASA_2_d")]
+seasa_cor_names = colnames(seasa_cor)
+seasa_cor_names = rep(seasa_cor_names, 4)
+seasa_cor = rep(seasa_cor, 4)
+seasa_cor = as.list(seasa_cor)
+sis_cor = target_2_dat[c("SD_SIS_b", "SD_SIS_d", "RPP_SIS_b", "RPP_SIS_d")]
+sis_cor_names = colnames(sis_cor)
+sis_cor_names = rep(sis_cor_names, each = 4)
+sis_cor = rep(sis_cor, each = 4)
+sis_cor = as.list(sis_cor)
+cor_out = list()
+cor_p = list() 
+cor_c = list()
+for(i in 1:length(seasa_cor)){
+  cor_out[[i]] = cor.test(seasa_cor[[i]], sis_cor[[i]], method = "spearman")
+  cor_p[[i]] = cor_out[[i]]$p.value
+  cor_c[[i]] = cor_out[[i]]$estimate
+}
+cor_p = unlist(cor_p)
+cor_p = ifelse(cor_p < .001, "<.001", round(cor_p,3))
+cor_p
+cor_c = unlist(cor_c)
+cor_c = round(cor_c, 2)
+cor_c
+
+cor_dat = data.frame(seasa_cor_names, sis_cor_names, cor_c, cor_p)
+cor_dat
+write.csv(cor_dat, "cor_dat.csv", row.names = FALSE)
 ```
 
 
