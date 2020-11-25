@@ -16,20 +16,13 @@ library(naniar)
 library(psych)
 library(parallel)
 library(broom)
+library(tableone)
 ```
 
 Find duplicates and figure out which ones to keep and discard
 Find errors in data entry
-x = data 
-y = 1 + upper limit of scale
-```{r}
-reverse_code_fun_inq = function(x){
-  return(8-x)
-}
 
-reverse_code_fun_acss = function(x){
-  return(5-x)
-}
+```{r}
 
 target_2_clean = target_2 %>%
   select(1,2, 4, 5, 7, 9, 10, 12, 23, 24, 27:112, 138:213) %>%
@@ -41,14 +34,28 @@ target_2_clean = target_2 %>%
   mutate_at(.vars = c("ProgramPackage", "Sex", "Gender", "HispanicLatino", "IDAfricanAmerican", "IDWhiteEuropean", "Education", "Employment",  "CAGE_AScreen", "PTSDScreen", "CAGE_DScreen"), as.factor) %>%
   ### Remove NAs for treatment package
   drop_na(ProgramPackage, ï..ID) %>%
+  ### Missing race is 0
   mutate(IDAfricanAmerican = replace_na(IDAfricanAmerican, 0)) %>%
-  # Reverse score INQF = 6; INQG = 7, INQJ = 10
-  mutate_at(.vars = c("INQ6b", "INQ6d", "INQ7b", "INQ7d", "INQ10b", "INQ10d"), .funs = reverse_code_fun_inq) %>%
-  mutate_at(.vars = c("ACSS2b", "ACSS3b", "ACSS5b"), .funs = reverse_code_fun_acss)
-
-target_2_clean %>%
-  select(INQ6b:INQ10b)
-
+  mutate(IDWhiteEuropean = replace_na(IDWhiteEuropean,0)) %>%
+  mutate(HispanicLatino = replace_na(HispanicLatino,0)) %>%
+  rename(ID = ï..ID) %>%
+  mutate(ID_single = gsub("\\..*" , "", ID)) %>%
+  mutate(id_dup = ID_single %in% unique( ID_single [duplicated( ID_single)])) %>%
+  mutate(ID_single = as.numeric(ID_single)) %>%
+  arrange(ID_single) %>%
+  relocate(ID, ID_single, id_dup) %>%
+  ## Drop those who do not have the exact same id that you need to remove from the id_remove sheet
+  filter(!ID %in% c(5.3, 5.4, 270.1, 270.2, 449.1, 449.1, 495.1, 495.2, 623.3, 1074, 1074.1, 1103, 1103.1, 1104, 1104.1, 1129.2, 1129.3)) %>%
+  ## Now you can keep instance of duplicates
+distinct(ID, .keep_all = TRUE) %>%
+  select(-c(ID_single, id_dup))
+  
+  ## values to remove
+#id_remove = target_2_clean %>%
+  #filter(id_dup == TRUE)
+  
+#write.csv(id_remove, "id_remove.csv", row.names = FALSE)
+target_2_clean
 ```
 
 
@@ -132,11 +139,16 @@ CAGE_b = target_2_clean[c("CAGE1b", "CAGE2b", "CAGE3b", "CAGE4b")]
 CAGE_d = target_2_clean[c("CAGE1b", "CAGE2b", "CAGE3b", "CAGE4b")]
 
 
+WAI = target_2_clean[c("WAI1", "WAI2", "WAI3", "WAI4")]
+
+CSQ8 = target_2_clean %>%
+  select(CSQ1:CSQ8)
+
 
 ```
 Create function for running through MAP, Parallel, and Omega
 ```{r}
-constructs = list(INQ_PB_b, INQ_PB_d, INQ_TB_b, INQ_TB_d, ACCS_b, RAS_GSO_b, RAS_GSO_d, RAS_PCH_b, RAS_PCH_d, RAS_NDS_b, RAS_NDS_d, RAS_WAH_b, RAS_WAH_d, SD_SIS_b, SD_SIS_d, RPP_SIS_b, RPP_SIS_d, Precomp_URICA_b, Precomp_URICA_d, Contemp_URICA_b, Contemp_URICA_d, Action_URICA_b, Action_URICA_d, Maintain_URICA_b, Maintain_URICA_b, SEASA_1_b, SEASA_2_b, SEASA_1_d, PTSD_b, PHQ_b, CAGE_b, CAGE_d)
+constructs = list(INQ_PB_b, INQ_PB_d, INQ_TB_b, INQ_TB_d, ACCS_b, RAS_GSO_b, RAS_GSO_d, RAS_PCH_b, RAS_PCH_d, RAS_NDS_b, RAS_NDS_d, RAS_WAH_b, RAS_WAH_d, SD_SIS_b, SD_SIS_d, RPP_SIS_b, RPP_SIS_d, Precomp_URICA_b, Precomp_URICA_d, Contemp_URICA_b, Contemp_URICA_d, Action_URICA_b, Action_URICA_d, Maintain_URICA_b, Maintain_URICA_b, SEASA_1_b, SEASA_2_b, SEASA_1_d, PTSD_b, PHQ_b, CAGE_b, CAGE_d, WAI, CSQ8)
 
 
 alpha_fun = function(x){
@@ -169,7 +181,7 @@ for(i in 1:length(constructs)){
   par_out_loop[[i]] = par_fun(x = constructs[[i]])
 }
 
-names(alpha_out_loop) = c("INQ_PB_b", "INQ_PB_d", "INQ_TB_b", "INQ_TB_d", "ACCS_b", "RAS_GSO_b", "RAS_GSO_d", "RAS_PCH_b", "RAS_PCH_d", "RAS_NDS_b", "RAS_NDS_d", "RAS_WAH_b", "RAS_WAH_d", "SD_SIS_b", "SD_SIS_d","RPP_SIS_b", "RPP_SIS_d", "Precomp_URICA_b", "Precomp_URICA_d", "Contemp_URICA_b", "Contemp_URICA_d", "Action_URICA_b", "Action_URICA_d", "Maintain_URICA_b", "Maintain_URICA_b", "SEASA_1_b", "SEASA_2_b","SEASA_1_d", "PTSD_b", "PHQ_b", "CAGE_b", "CAGE_d") 
+names(alpha_out_loop) = c("INQ_PB_b", "INQ_PB_d", "INQ_TB_b", "INQ_TB_d", "ACCS_b", "RAS_GSO_b", "RAS_GSO_d", "RAS_PCH_b", "RAS_PCH_d", "RAS_NDS_b", "RAS_NDS_d", "RAS_WAH_b", "RAS_WAH_d", "SD_SIS_b", "SD_SIS_d","RPP_SIS_b", "RPP_SIS_d", "Precomp_URICA_b", "Precomp_URICA_d", "Contemp_URICA_b", "Contemp_URICA_d", "Action_URICA_b", "Action_URICA_d", "Maintain_URICA_b", "Maintain_URICA_b", "SEASA_1_b", "SEASA_2_b","SEASA_1_d", "PTSD_b", "PHQ_b", "CAGE_b", "CAGE_d", "WAI", "CSQ8") 
 # save names for other analyses
 names_psych =  names(alpha_out_loop) 
 names(map_out_loop) = names_psych 
@@ -183,7 +195,7 @@ alpha_out_loop_clean = alpha_out_loop %>%
   t() %>%
   data.frame() %>%
   rename(., "Alpha" = .)
-alpha_out_loop_clean
+write.csv(alpha_out_loop_clean, "alpha_out_loop_clean.csv")
 
 
 map_out_loop_clean = map_out_loop %>%
@@ -197,6 +209,8 @@ map_out_loop_clean = map_out_loop %>%
   rename(., "Factor 1"= X1, "Factor 2" = X2, "Factor 3" = X3) %>%
   relocate(var_names)
 map_out_loop_clean  
+write.csv(map_out_loop_clean, "map_out_loop_clean.csv", row.names = FALSE)
+
 
 par_out_loop_clean = par_out_loop %>%
   unlist() %>%
@@ -206,14 +220,16 @@ par_out_loop_clean = par_out_loop %>%
   data.frame() %>%
   rename(., "Factors to keep" = .)
 par_out_loop_clean
+write.csv(par_out_loop_clean, "par_out_loop_clean.csv")
+
 
 ```
 
 
-Create average scores
+Create average scores and subset data
 ```{r}
 
-test =  target_2_clean %>%
+target_2_clean =  target_2_clean %>%
   rowwise() %>%
   mutate(INQ_PB_b_mean = mean(c_across(11:15), na.rm = TRUE),
          INQ_TB_b_mean = mean(c_across(16:20), na.rm = TRUE),
@@ -247,12 +263,12 @@ test =  target_2_clean %>%
          Action_URICA_b_sum = sum(c_across(c("URICA2b", "URICA3b", "URICA12b")), na.rm = TRUE),
          Action_URICA_d_sum = sum(c_across(c("URICA2d", "URICA3d", "URICA12d")), na.rm = TRUE),
          Maintain_URICA_b_sum = sum(c_across(c("URICA6b", "URICA8b", "URICA10b")), na.rm = TRUE),
-         Maintain_URICA_d_sum = sum(c_across(c("URICA6d", "URICA8d", "URICA10d")), na.rm = TRUE)
-         
-         ) %>%
-  select(c(ï..ID:Employment, PTSDScreen, CAGE_AScreen, CAGE_DScreen))
+         Maintain_URICA_d_sum = sum(c_across(c("URICA6d", "URICA8d", "URICA10d")), na.rm = TRUE), 
+         WAI_mean = mean(c_across(c("WAI1", "WAI2", "WAI3", "WAI4")), na.rm = TRUE),
+         CSQ8_mean = mean(c_across(c("CSQ1", "CSQ2", "CSQ2", "CSQ3", "CSQ4", "CSQ5", "CSQ6", "CSQ7", "CSQ8")), na.rm =TRUE)) %>%
+  select(c(ID:Employment, PTSDScreen, CAGE_AScreen, CAGE_DScreen, INQ_PB_b_mean:CSQ8_mean))
 
-test
+target_2_clean
 ```
 
 
@@ -260,9 +276,11 @@ test
 
 Check ranges and missingness
 ```{r}
-target_2
 apply(target_2_clean, 2, range, na.rm = TRUE)
-miss_var_summary(target_2_clean)
+miss_summary_results = miss_var_summary(target_2_clean)
+miss_summary_results[2:3] = round(miss_summary_results[2:3],2)
+write.csv(miss_summary_results, "miss_summary_results.csv", row.names = FALSE)
+miss_summary_results
 ```
 
 
@@ -276,6 +294,11 @@ RTC_URICA_d = (Contemp_URICA_d+Action_URICA_d+Maintain_URICA_d)-Precomp_URICA_d
 CA_URICA_d = (Action_URICA_d-Contemp_URICA_d)
 
 ```{r}
+tab1 =  CreateTableOne(data = target_2_clean, includeNA = TRUE)
+tab1 = print(tab1, showAllLevels = TRUE)
+tab1
+library(prettyR)
+describe.factor(target_2_clean$Education)
 
 ```
 
