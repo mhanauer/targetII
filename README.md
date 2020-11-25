@@ -14,6 +14,7 @@ library(dplyr)
 library(tidyr)
 library(naniar)
 library(psych)
+library(parallel)
 ```
 
 Find duplicates and figure out which ones to keep and discard
@@ -107,31 +108,50 @@ Maintain_URICA_b = target_2_clean[c("URICA6b", "URICA8b", "URICA10b")]
 Maintain_URICA_d = target_2_clean[c("URICA6d", "URICA8d", "URICA10d")]
 
 
-RTC_URICA_b = (Contemp_URICA_b+Action_URICA_b+Maintain_URICA_b)-Precomp_URICA_b
-CA_URICA_b = (Action_URICA_b-Contemp_URICA_b)
-
-RTC_URICA_d = (Contemp_URICA_d+Action_URICA_d+Maintain_URICA_d)-Precomp_URICA_d
-CA_URICA_d = (Action_URICA_d-Contemp_URICA_d)
 
 
 ## 1, 2, 3, 4, 5, 6
 SEASA_1_b = target_2_clean[c("SEASA1b", "SEASA2b", "SEASA3b", "SEASA4b", "SEASA5b", "SEASA6b")]
+SEASA_1_d = target_2_clean[c("SEASA1d", "SEASA2d", "SEASA3d", "SEASA4d", "SEASA5d", "SEASA6d")]
 ### 8, 9, 10, 12
 SEASA_2_b = target_2_clean[c("SEASA8b", "SEASA9b", "SEASA10b", "SEASA12b")]
+SEASA_2_d = target_2_clean[c("SEASA8d", "SEASA9d", "SEASA10d", "SEASA12d")]
 
 #PTSD
 PTSD_b =  target_2_clean[c("PTSD1b", "PTSD2b", "PTSD3b", "PTSD4b")]
-PTSD_d =  target_2_clean[c("PTSD1d", "PTSD2d", "PTSD3d", "PTSD4d")]
 
 ##PHQ
 PHQ_b = target_2_clean[c("PHQ91b", "PHQ92b", "PHQ93b")]
-PHQ_d = target_2_clean[c("PHQ91d", "PHQ92d", "PHQ93d")]
 
 ### Cage
 CAGE_b = target_2_clean[c("CAGE1b", "CAGE2b", "CAGE3b", "CAGE4b")]
 CAGE_d = target_2_clean[c("CAGE1b", "CAGE2b", "CAGE3b", "CAGE4b")]
 
 
+
+```
+Create function for running through MAP, Parallel, and Omega
+```{r}
+constructs = list(INQ_PB_b, INQ_PB_d, INQ_TB_b, INQ_TB_d, ACCS_b, RAS_GSO_b, RAS_GSO_d, RAS_PCH_b, RAS_PCH_d, RAS_NDS_b, RAS_NDS_d, RAS_WAH_b, RAS_WAH_d, SD_SIS_b, SD_SIS_d, RPP_SIS_b, RPP_SIS_d, Precomp_URICA_b, Precomp_URICA_d, Contemp_URICA_b, Contemp_URICA_d, Action_URICA_b, Action_URICA_d, Maintain_URICA_b, Maintain_URICA_b, SEASA_1_b, SEASA_2_b, SEASA_1_d, PTSD_b, PHQ_b, CAGE_b, CAGE_d)
+
+constructs_names = data.frame(INQ_PB_b, INQ_PB_d, INQ_TB_b, INQ_TB_d, ACCS_b, RAS_GSO_b, RAS_GSO_d, RAS_PCH_b, RAS_PCH_d, RAS_NDS_b, RAS_NDS_d, RAS_WAH_b, RAS_WAH_d, SD_SIS_b, SD_SIS_d, RPP_SIS_b, RPP_SIS_d, Precomp_URICA_b, Precomp_URICA_d, Contemp_URICA_b, Contemp_URICA_d, Action_URICA_b, Action_URICA_d, Maintain_URICA_b, Maintain_URICA_b, SEASA_1_b, SEASA_2_b, SEASA_1_d, PTSD_b, PHQ_b, CAGE_b, CAGE_d)
+
+
+
+psych_fun = function(x){
+  omega_out = omega(x)
+  omega_out =  summary(omega_out)
+  omega_out = omega_out[2,1]
+  return(omega_out)
+}
+
+omega_out_loop = list()
+
+for(i in 1:length(constructs)){
+  omega_out_loop[[i]] = psych_fun(constructs[[i]])
+}
+names(omega_out_loop) = c("INQ_PB_b", "INQ_PB_d", "INQ_TB_b", "INQ_TB_d", "ACCS_b", "RAS_GSO_b", "RAS_GSO_d", "RAS_PCH_b", "RAS_PCH_d", "RAS_NDS_b", "RAS_NDS_d", "RAS_WAH_b", "RAS_WAH_d", "SD_SIS_b", "SD_SIS_d","RPP_SIS_b", "RPP_SIS_d", "Precomp_URICA_b", "Precomp_URICA_d", "Contemp_URICA_b", "Contemp_URICA_d", "Action_URICA_b", "Action_URICA_d", "Maintain_URICA_b", "Maintain_URICA_b", "SEASA_1_b", "SEASA_2_b","SEASA_1_d", "PTSD_b", "PHQ_b", "CAGE_b", "CAGE_d")
+omega_out_loop
 
 ```
 
@@ -164,6 +184,12 @@ INQ_TB_d = apply(target_2_clean[,101:105], 1, mean, na.rm = TRUE)
 ### 0 to 4 scale
 ACCS_b = apply(target_2_clean[,22:26], 1, mean, na.rm = TRUE)
 ####
+
+RTC_URICA_b = (Contemp_URICA_b+Action_URICA_b+Maintain_URICA_b)-Precomp_URICA_b
+CA_URICA_b = (Action_URICA_b-Contemp_URICA_b)
+
+RTC_URICA_d = (Contemp_URICA_d+Action_URICA_d+Maintain_URICA_d)-Precomp_URICA_d
+CA_URICA_d = (Action_URICA_d-Contemp_URICA_d)
 
 
 ```
