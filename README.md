@@ -234,7 +234,7 @@ target_2_clean =  target_2_clean %>%
   mutate(INQ_PB_b_mean = mean(c_across(11:15), na.rm = TRUE),
          INQ_TB_b_mean = mean(c_across(16:20), na.rm = TRUE),
          INQ_PB_d_mean = mean(c_across(96:100), na.rm = TRUE),
-         INQ_PB_d_mean = mean(c_across(101:105), na.rm = TRUE),
+         INQ_TB_d_mean = mean(c_across(101:105), na.rm = TRUE),
          ACCS_b_mean = mean(c_across(21:27), na.rm = TRUE),
          RAS_GSO_b_mean = mean(c_across(c(28:32, 47)), na.rm = TRUE),
          RAS_GSO_d_mean = mean(c_across(c(106:110, 125)), na.rm = TRUE),
@@ -295,10 +295,9 @@ CA_URICA_d = (Action_URICA_d-Contemp_URICA_d)
 
 ```{r}
 tab1 =  CreateTableOne(data = target_2_clean, includeNA = TRUE)
-tab1 = print(tab1, showAllLevels = TRUE)
 tab1
-library(prettyR)
-describe.factor(target_2_clean$Education)
+write.csv(tab1, "tab1.csv")
+summary(tab1)
 
 ```
 
