@@ -46,9 +46,12 @@ target_2_clean = target_2 %>%
   mutate_at(.vars = c("INQ6b", "INQ6d", "INQ7b", "INQ7d", "INQ10b", "INQ10d"), .funs = reverse_code_fun_inq) %>%
   mutate_at(.vars = c("ACSS2b", "ACSS3b", "ACSS5b"), .funs = reverse_code_fun_acss)
 
-target_2_clean
+target_2_clean %>%
+  select(INQ6b:INQ10b)
 
 ```
+
+
 Create data sets for psycho tests
 ```{r}
 INQ_PB_b = target_2_clean[,11:15]
@@ -135,19 +138,43 @@ Create function for running through MAP, Parallel, and Omega
 ```{r}
 constructs = list(INQ_PB_b, INQ_PB_d, INQ_TB_b, INQ_TB_d, ACCS_b, RAS_GSO_b, RAS_GSO_d, RAS_PCH_b, RAS_PCH_d, RAS_NDS_b, RAS_NDS_d, RAS_WAH_b, RAS_WAH_d, SD_SIS_b, SD_SIS_d, RPP_SIS_b, RPP_SIS_d, Precomp_URICA_b, Precomp_URICA_d, Contemp_URICA_b, Contemp_URICA_d, Action_URICA_b, Action_URICA_d, Maintain_URICA_b, Maintain_URICA_b, SEASA_1_b, SEASA_2_b, SEASA_1_d, PTSD_b, PHQ_b, CAGE_b, CAGE_d)
 
-psych_fun = function(x){
+
+alpha_fun = function(x){
   alpha_out = summary(alpha(x))
   alpha_out = round(alpha_out$std.alpha,2)
   return(alpha_out)
 }
+map_fun = function(x){
+  map_out =  vss(x, n = 3)
+  map_out = round(map_out$map, 2)
+  return(map_out)
+}
+
+test = fa.parallel(INQ_PB_b, fa = "fa")
+test$nfact
+
+par_fun = function(x){
+  par_out = fa.parallel(x, fa = "fa")
+  par_out = par_out$nfact
+}
+
 
 alpha_out_loop = list()
+map_out_loop = list()
+par_out_loop = list()
 
 for(i in 1:length(constructs)){
-  alpha_out_loop[[i]] = psych_fun(x = constructs[[i]])
-  
+  alpha_out_loop[[i]] = alpha_fun(x = constructs[[i]])
+  map_out_loop[[i]] = map_fun(x = constructs[[i]])
+  par_out_loop[[i]] = par_fun(x = constructs[[i]])
 }
-names(alpha_out_loop) = c("INQ_PB_b", "INQ_PB_d", "INQ_TB_b", "INQ_TB_d", "ACCS_b", "RAS_GSO_b", "RAS_GSO_d", "RAS_PCH_b", "RAS_PCH_d", "RAS_NDS_b", "RAS_NDS_d", "RAS_WAH_b", "RAS_WAH_d", "SD_SIS_b", "SD_SIS_d","RPP_SIS_b", "RPP_SIS_d", "Precomp_URICA_b", "Precomp_URICA_d", "Contemp_URICA_b", "Contemp_URICA_d", "Action_URICA_b", "Action_URICA_d", "Maintain_URICA_b", "Maintain_URICA_b", "SEASA_1_b", "SEASA_2_b","SEASA_1_d", "PTSD_b", "PHQ_b", "CAGE_b", "CAGE_d")
+
+names(alpha_out_loop) = c("INQ_PB_b", "INQ_PB_d", "INQ_TB_b", "INQ_TB_d", "ACCS_b", "RAS_GSO_b", "RAS_GSO_d", "RAS_PCH_b", "RAS_PCH_d", "RAS_NDS_b", "RAS_NDS_d", "RAS_WAH_b", "RAS_WAH_d", "SD_SIS_b", "SD_SIS_d","RPP_SIS_b", "RPP_SIS_d", "Precomp_URICA_b", "Precomp_URICA_d", "Contemp_URICA_b", "Contemp_URICA_d", "Action_URICA_b", "Action_URICA_d", "Maintain_URICA_b", "Maintain_URICA_b", "SEASA_1_b", "SEASA_2_b","SEASA_1_d", "PTSD_b", "PHQ_b", "CAGE_b", "CAGE_d") 
+# save names for other analyses
+names_psych =  names(alpha_out_loop) 
+names(map_out_loop) = names_psych 
+names(par_out_loop) = names_psych
+
 
 alpha_out_loop_clean = alpha_out_loop %>%
   unlist() %>%
@@ -157,65 +184,78 @@ alpha_out_loop_clean = alpha_out_loop %>%
   data.frame() %>%
   rename(., "Alpha" = .)
 alpha_out_loop_clean
+
+
+map_out_loop_clean = map_out_loop %>%
+  unlist(map_out_loop) %>%
+  matrix(ncol = 3, byrow = TRUE) %>%
+  t() %>%
+  data.frame() %>%
+  t() %>%
+  data.frame() %>%
+  mutate(var_names =  names_psych) %>%
+  rename(., "Factor 1"= X1, "Factor 2" = X2, "Factor 3" = X3) %>%
+  relocate(var_names)
+map_out_loop_clean  
+
+par_out_loop_clean = par_out_loop %>%
+  unlist() %>%
+  t() %>%
+  data.frame() %>%
+  t() %>%
+  data.frame() %>%
+  rename(., "Factors to keep" = .)
+par_out_loop_clean
+
 ```
 
 
 Create average scores
 ```{r}
-### Create data sets with each outcome and generate function
-#INQ1b: The people in my life would be better off if I were gone 
-#INQ2b: The people in my life would be happier without me
-#INQ3b: I think my death would be a relief to the people in my life
-#INQ4b: I think the people in my life wish they could be rid of me
-#INQ5b: I think I make things worse for the people in my life
-#TB 
-#INQ6b:I feel like I belong
-#INQ7b:I am fortunate to have many caring and supportive friends
-#INQ8b: I feel disconnected from other people
-#INQ9b: I often feel like an outsider in social groups
-#INQ10b: I am close to other people
-test_fun = function(dat, x, y){
-  output = apply(dat[,x:y], 1, mean, na.rm = TRUE)
-}
-test= test_fun(dat = target_2_clean, x = 11, y = 15)
+
+test =  target_2_clean %>%
+  rowwise() %>%
+  mutate(INQ_PB_b_mean = mean(c_across(11:15), na.rm = TRUE),
+         INQ_TB_b_mean = mean(c_across(16:20), na.rm = TRUE),
+         INQ_PB_d_mean = mean(c_across(96:100), na.rm = TRUE),
+         INQ_PB_d_mean = mean(c_across(101:105), na.rm = TRUE),
+         ACCS_b_mean = mean(c_across(21:27), na.rm = TRUE),
+         RAS_GSO_b_mean = mean(c_across(c(28:32, 47)), na.rm = TRUE),
+         RAS_GSO_d_mean = mean(c_across(c(106:110, 125)), na.rm = TRUE),
+         RAS_PCH_b_mean = mean(c_across(33:40), na.rm = TRUE),
+         RAS_PCH_d_mean = mean(c_across(111:118), na.rm = TRUE),
+         RAS_NDS_b_mean = mean(c_across(41:43), na.rm = TRUE),
+         RAS_NDS_d_mean = mean(c_across(119:121), na.rm = TRUE),
+         RAS_WAH_b_mean = mean(c_across(44:46), na.rm = TRUE),
+         RAS_WAH_d_mean = mean(c_across(122:124), na.rm = TRUE),
+         SD_SIS_b_mean = mean(c_across(52:55), na.rm = TRUE),
+         SD_SIS_d_mean = mean(c_across(130:133), na.rm = TRUE),
+         RPP_SIS_b_mean = mean(c_across(c(48:51, 56, 57)), na.rm = TRUE), 
+         RPP_SIS_d_mean = mean(c_across(c(126:129, 134, 135)), na.rm = TRUE),
+         SEASA_1_b_mean = mean(c_across(c("SEASA1b", "SEASA2b", "SEASA3b", "SEASA4b", "SEASA5b", "SEASA6b")), na.rm = TRUE),
+         SEASA_1_d_mean = mean(c_across(c("SEASA1d", "SEASA2d", "SEASA3d", "SEASA4d", "SEASA5d", "SEASA6d")), na.rm = TRUE),
+         SEASA_2_b_mean = mean(c_across(c("SEASA8b", "SEASA9b", "SEASA10b", "SEASA12b")), na.rm = TRUE), 
+         SEASA_2_d_mean = mean(c_across(c("SEASA8d", "SEASA9d", "SEASA10d", "SEASA12d")), na.rm = TRUE),
+         PTSD_b_mean = mean(c_across(c("PTSD1b", "PTSD2b", "PTSD3b", "PTSD4b")), na.rm = TRUE),
+         PHQ_b_mean = mean(c_across(c("PHQ91b", "PHQ92b", "PHQ93b")), na.rm = TRUE),
+         CAGE_b_mean = mean(c_across(c("CAGE1b", "CAGE2b", "CAGE3b", "CAGE4b")), na.rm = TRUE),
+         CAGE_d_mean = mean(c_across(c("CAGE1b", "CAGE2b", "CAGE3b", "CAGE4b")), na.rm = TRUE), 
+         Precomp_URICA_b = mean(c_across(c("URICA1b", "URICA9b", "URICA11b")), na.rm = TRUE),
+         Precomp_URICA_d = mean(c_across(c("URICA1d", "URICA9d", "URICA11d")), na.rm = TRUE),
+         Contemp_URICA_b_sum = sum(c_across(c("URICA4b", "URICA5b", "URICA7b")), na.rm = TRUE),
+         Contemp_URICA_d_sum = sum(c_across(c("URICA1d", "URICA9d", "URICA11d")), na.rm = TRUE),
+         Action_URICA_b_sum = sum(c_across(c("URICA2b", "URICA3b", "URICA12b")), na.rm = TRUE),
+         Action_URICA_d_sum = sum(c_across(c("URICA2d", "URICA3d", "URICA12d")), na.rm = TRUE),
+         Maintain_URICA_b_sum = sum(c_across(c("URICA6b", "URICA8b", "URICA10b")), na.rm = TRUE),
+         Maintain_URICA_d_sum = sum(c_across(c("URICA6d", "URICA8d", "URICA10d")), na.rm = TRUE)
+         
+         ) %>%
+  select(c(ï..ID:Employment, PTSDScreen, CAGE_AScreen, CAGE_DScreen))
+
 test
-
-INQ_PB_b = apply(target_2_clean[,11:15], 1, mean, na.rm = TRUE)
-INQ_TB_b = apply(target_2_clean[,16:20], 1, mean, na.rm = TRUE)
-INQ_PB_d = apply(target_2_clean[,96:100], 1, mean, na.rm = TRUE)
-INQ_TB_d = apply(target_2_clean[,101:105], 1, mean, na.rm = TRUE)
-### Reverse score 2,3, and 5
-### 0 to 4 scale
-ACCS_b = apply(target_2_clean[,22:26], 1, mean, na.rm = TRUE)
-####
-
-RTC_URICA_b = (Contemp_URICA_b+Action_URICA_b+Maintain_URICA_b)-Precomp_URICA_b
-CA_URICA_b = (Action_URICA_b-Contemp_URICA_b)
-
-RTC_URICA_d = (Contemp_URICA_d+Action_URICA_d+Maintain_URICA_d)-Precomp_URICA_d
-CA_URICA_d = (Action_URICA_d-Contemp_URICA_d)
-
-
 ```
 
-Run function for MAP, Parallel, and Omega
 
-Test recode function it works
-```{r}
-target_2_clean_test = target_2 %>%
-  select(1,2, 4, 5, 7, 9, 10, 12, 23, 24, 27:112, 138:213) %>%
-  # Remove all non-numeric numbers
-  mutate_all(., as.numeric) %>%
-  ### Remove this variable PPSb
-  select(-c("PPSb")) %>%
-  ## Change categorical variables to categorical
-  mutate_at(.vars = c("ProgramPackage", "Sex", "Gender", "HispanicLatino", "IDAfricanAmerican", "IDWhiteEuropean", "Education", "Employment",  "CAGE_AScreen", "PTSDScreen", "CAGE_DScreen"), as.factor) %>%
-  ### Remove NAs for treatment package
-  drop_na(ProgramPackage, ï..ID) %>%
-  mutate(IDAfricanAmerican = replace_na(IDAfricanAmerican, 0))
-  
-target_2_clean_test
-```
 
 
 Check ranges and missingness
@@ -223,5 +263,19 @@ Check ranges and missingness
 target_2
 apply(target_2_clean, 2, range, na.rm = TRUE)
 miss_var_summary(target_2_clean)
+```
+
+
+
+After imputation create these scores
+
+RTC_URICA_b = (Contemp_URICA_b+Action_URICA_b+Maintain_URICA_b)-Precomp_URICA_b
+CA_URICA_b = (Action_URICA_b-Contemp_URICA_b)
+
+RTC_URICA_d = (Contemp_URICA_d+Action_URICA_d+Maintain_URICA_d)-Precomp_URICA_d
+CA_URICA_d = (Action_URICA_d-Contemp_URICA_d)
+
+```{r}
+
 ```
 
