@@ -294,15 +294,14 @@ target_2_clean =  target_2_clean %>%
          Maintain_URICA_d_sum = sum(c_across(c("URICA6d", "URICA8d", "URICA10d")), na.rm = TRUE), 
          WAI_mean = mean(c_across(c("WAI1", "WAI2", "WAI3", "WAI4")), na.rm = TRUE),
          CSQ8_mean = mean(c_across(c("CSQ1", "CSQ2", "CSQ2", "CSQ3", "CSQ4", "CSQ5", "CSQ6", "CSQ7", "CSQ8")), na.rm =TRUE)) %>%
-  select(c(ID:Employment, PTSDScreen, CAGE_AScreen, CAGE_DScreen, INQ_PB_b_mean:CSQ8_mean)) 
+  select(c(ID:Employment, PTSDScreen, CAGE_AScreen, CAGE_DScreen, INQ_PB_b_mean:CSQ8_mean)) %>%
+  #Relocate variables based on part of name not super neccesary, but useful tool
+  relocate(ends_with("_d_mean"), .after = last_col())
 
 
 
-target_2_clean
+test
 ```
-summarise_each(funs(100*mean(is.na(.))))
-
-
 
 Check ranges and missingness
 ```{r}
@@ -332,17 +331,55 @@ summary(tab1)
 
 ```
 
+Need both the imp mice dat and the imp_mice_complete
+imp_mice_complete used for getting the means and sds for cohen's D's
 ```{r}
 library(mice)
 
-imp1_test = mice(target_2_clean[c(2,14:48)], visitSequence = "monotone")
+imp_mice_dat = mice(target_2_clean[c(2:48)], visitSequence = "monotone")
+saveRDS(imp_mice_dat, "imp_mice_dat.rds")
+imp_mice_dat = readRDS("imp_mice_dat.rds")
 
+## If you want long version use complete
+imp_mice_dat_complete =  complete(imp_mice_dat, "all")
+saveRDS(imp_mice_dat_complete, file = "imp_mice_dat_complete.rds")
+imp_mice_dat_complete = readRDS("imp_mice_dat_complete.rds")
+imp_mice_dat_complete
+```
+Examples
+```{r}
 test_sum =  with(imp1_test, lm(INQ_PB_d_mean ~ INQ_PB_b_mean + ProgramPackage))
-summary(test_sum)
-
 summary(pool(test_sum))
+t_test = with(imp1_test,t.test(INQ_PB_d_mean, INQ_PB_b_mean))
+
+summary(pool(t_test))
+with(imp1_test, apply(imp1_test, 2, mean))
+target_2_clean
 ```
 
 
+Evaluate diagnostics from MICE
+```{r}
+densityplot(x = imp_mice_dat, data =~ INQ_PB_d_mean + INQ_TB_d_mean + RAS_GSO_d_mean + RAS_PCH_d_mean + RAS_NDS_d_mean+RAS_WAH_d_mean + SD_SIS_d_mean + RPP_SIS_d_mean + SEASA_1_d_mean + SEASA_2_d_mean  )
+```
+
+
+Evaluate normality assumption
+Not normal need standardized difference scores
+```{r}
+library(ggplot2)
+for(i in 1:length(imp1_test_complete)){
+  apply(imp_mice_dat_complete[[i]][13:47], 2, hist)
+}
+```
+Create standardized differences scores
+Then use lm with 1 to conduct t-tests for overall effect
+Still need to get imputted means 
+```{r}
+diff_out = list()
+
+
+
+```
 
 
