@@ -336,15 +336,15 @@ imp_mice_complete used for getting the means and sds for cohen's D's
 ```{r}
 library(mice)
 
-imp_mice_dat = mice(target_2_clean[c(2:48)], visitSequence = "monotone")
-saveRDS(imp_mice_dat, "imp_mice_dat.rds")
+#imp_mice_dat = mice(target_2_clean[c(2:48)], visitSequence = "monotone")
+#saveRDS(imp_mice_dat, "imp_mice_dat.rds")
 imp_mice_dat = readRDS("imp_mice_dat.rds")
 
 ## If you want long version use complete
-imp_mice_dat_complete =  complete(imp_mice_dat, "all")
-saveRDS(imp_mice_dat_complete, file = "imp_mice_dat_complete.rds")
+#imp_mice_dat_complete =  complete(imp_mice_dat, "all")
+#saveRDS(imp_mice_dat_complete, file = "imp_mice_dat_complete.rds")
+setwd("P:/Evaluation/TN Lives Count_Target2/Study 5_RELATE Enhanced Follow-up & Tech/3_Data/FINAL Relate Databases")
 imp_mice_dat_complete = readRDS("imp_mice_dat_complete.rds")
-imp_mice_dat_complete
 ```
 Examples
 ```{r}
@@ -375,11 +375,19 @@ for(i in 1:length(imp1_test_complete)){
 Create standardized differences scores
 Then use lm with 1 to conduct t-tests for overall effect
 Still need to get imputted means 
+INQ_PB_b_mean, INQ_TB_b_mean, RAS_GSO_b_mean, RAS_PCH_b_mean, RAS_NDS_b_mean, RAS_WAH_b_mean, SD_SIS_b_mean, RPP_SIS_b_mean, SEASA_1_b_mean, SEASA_2_b_mean, PHQ_b_mean, CAGE_b_mean
+
 ```{r}
+imp_mice_dat_complete_diff = imp_mice_dat_complete
 diff_out = list()
 
-
+for(i in 1:length(imp_mice_dat_complete)){
+  diff_out[[i]] =  imp_mice_dat_complete[[1]][c("INQ_PB_d_mean", "INQ_TB_d_mean", "RAS_GSO_d_mean", "RAS_PCH_d_mean", "RAS_NDS_d_mean","RAS_WAH_d_mean", "SD_SIS_d_mean", "RPP_SIS_d_mean", "SEASA_1_d_mean","SEASA_2_d_mean")] - imp_mice_dat_complete[[1]][c("INQ_PB_b_mean", "INQ_TB_b_mean", "RAS_GSO_b_mean", "RAS_PCH_b_mean", "RAS_NDS_b_mean","RAS_WAH_b_mean", "SD_SIS_b_mean", "RPP_SIS_b_mean", "SEASA_1_b_mean","SEASA_2_b_mean")]
+colnames(diff_out[[i]]) = c("INQ_PB_diff", "INQ_TB_diff", "RAS_GSO_diff", "RAS_PCH_diff", "RAS_NDS_diff","RAS_WAH_diff", "SD_SIS_diff", "RPP_SIS_diff", "SEASA_1_diff","SEASA_2_diff")
+diff_out[[i]] = data.frame(scale(diff_out[[i]]))
+imp_mice_dat_complete_diff[[i]] =cbind(imp_mice_dat_complete_diff[[i]], diff_out[[i]])
+}
 
 ```
-
+Run LM and t.test
 
