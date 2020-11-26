@@ -17,6 +17,7 @@ library(psych)
 library(parallel)
 library(broom)
 library(tableone)
+library(mice)
 ```
 
 Find duplicates and figure out which ones to keep and discard
@@ -25,19 +26,18 @@ Find errors in data entry
 ```{r}
 
 target_2_clean = target_2 %>%
-  select(1,2, 4, 5, 7, 9, 10, 12, 23, 24, 27:112, 138:213) %>%
+  select(1,2, 4, 5, 7, 19, 10, 12, 23, 24, 27:112, 138:213) %>%
   # Remove all non-numeric numbers
   mutate_all(., as.numeric) %>%
   ### Remove this variable PPSb
   select(-c("PPSb")) %>%
   ## Change categorical variables to categorical
-  mutate_at(.vars = c("ProgramPackage", "Sex", "Gender", "HispanicLatino", "IDAfricanAmerican", "IDWhiteEuropean", "Education", "Employment",  "CAGE_AScreen", "PTSDScreen", "CAGE_DScreen"), as.factor) %>%
+  mutate_at(.vars = c("ProgramPackage", "Gender", "Orientation", "IDAfricanAmerican", "IDWhiteEuropean", "Education", "Employment",  "CAGE_AScreen", "PTSDScreen", "CAGE_DScreen"), as.factor) %>%
   ### Remove NAs for treatment package
   drop_na(ProgramPackage, ï..ID) %>%
   ### Missing race is 0
   mutate(IDAfricanAmerican = replace_na(IDAfricanAmerican, 0)) %>%
   mutate(IDWhiteEuropean = replace_na(IDWhiteEuropean,0)) %>%
-  mutate(HispanicLatino = replace_na(HispanicLatino,0)) %>%
   rename(ID = ï..ID) %>%
   mutate(ID_single = gsub("\\..*" , "", ID)) %>%
   mutate(id_dup = ID_single %in% unique( ID_single [duplicated( ID_single)])) %>%
@@ -48,8 +48,40 @@ target_2_clean = target_2 %>%
   filter(!ID %in% c(5.3, 5.4, 270.1, 270.2, 449.1, 449.1, 495.1, 495.2, 623.3, 1074, 1074.1, 1103, 1103.1, 1104, 1104.1, 1129.2, 1129.3)) %>%
   ## Now you can keep instance of duplicates
 distinct(ID, .keep_all = TRUE) %>%
-  select(-c(ID_single, id_dup))
-  
+  select(-c(ID_single, id_dup)) %>%
+  #Relabel the descriptive statistics
+  mutate(Orientation = case_when(Orientation == "1"~ "Bisexual or Pansexual", 
+          Orientation == "2" ~ "Gay or lesbian",
+          Orientation == "3" ~  "Heterosexual",
+          Orientation == "4" ~ "Not Listed", 
+          Orientation == "5" ~ "Perfer not to respond")) %>%
+  mutate(Gender = case_when(
+    Gender == "1" ~ "Male",
+    Gender == "2" ~ "Female",
+    Gender == "3" ~ "Transgender Male",
+    Gender == "4" ~ "Transgender Female",
+    Gender == "5" ~ "Gender Variant / Non-Conforming",
+    Gender == "6" ~ "Not Listed",
+    Gender == "7" ~ "Prefer not to respond"
+  )) %>%
+  mutate(Education = case_when(
+    Education == "1" ~ "11th grade or less",
+    Education == "2" ~ "12th grade (high school diploma/GED)",
+    Education == "3" ~ "Some college (no degree)",
+    Education == "4" ~ "Associate’s degree",
+    Education == "5" ~ "Bachelor’s degree",
+    Education == "6" ~ "Master’s degree or equivalent",
+    Education == "7" ~ "Doctoral degree (PhD, MD, etc.)"
+  )) %>%
+  mutate(Employment = case_when(
+    Employment == "1" ~ "Unemployed",
+    Employment == "2" ~ "Part-time employed",
+    Employment == "3" ~ "Full time employed",
+    Employment == "4" ~ "Retired",
+    Employment == "5" ~ "Disabled",
+    Employment == "6" ~ "Student",
+    Employment == "7" ~ "Not in the labor force"
+  ))
   ## values to remove
 #id_remove = target_2_clean %>%
   #filter(id_dup == TRUE)
@@ -57,8 +89,6 @@ distinct(ID, .keep_all = TRUE) %>%
 #write.csv(id_remove, "id_remove.csv", row.names = FALSE)
 target_2_clean
 ```
-
-
 Create data sets for psycho tests
 ```{r}
 INQ_PB_b = target_2_clean[,11:15]
@@ -162,8 +192,6 @@ map_fun = function(x){
   return(map_out)
 }
 
-test = fa.parallel(INQ_PB_b, fa = "fa")
-test$nfact
 
 par_fun = function(x){
   par_out = fa.parallel(x, fa = "fa")
@@ -266,11 +294,13 @@ target_2_clean =  target_2_clean %>%
          Maintain_URICA_d_sum = sum(c_across(c("URICA6d", "URICA8d", "URICA10d")), na.rm = TRUE), 
          WAI_mean = mean(c_across(c("WAI1", "WAI2", "WAI3", "WAI4")), na.rm = TRUE),
          CSQ8_mean = mean(c_across(c("CSQ1", "CSQ2", "CSQ2", "CSQ3", "CSQ4", "CSQ5", "CSQ6", "CSQ7", "CSQ8")), na.rm =TRUE)) %>%
-  select(c(ID:Employment, PTSDScreen, CAGE_AScreen, CAGE_DScreen, INQ_PB_b_mean:CSQ8_mean))
+  select(c(ID:Employment, PTSDScreen, CAGE_AScreen, CAGE_DScreen, INQ_PB_b_mean:CSQ8_mean)) 
+
+
 
 target_2_clean
 ```
-
+summarise_each(funs(100*mean(is.na(.))))
 
 
 
@@ -281,6 +311,7 @@ miss_summary_results = miss_var_summary(target_2_clean)
 miss_summary_results[2:3] = round(miss_summary_results[2:3],2)
 write.csv(miss_summary_results, "miss_summary_results.csv", row.names = FALSE)
 miss_summary_results
+miss_percent = miss_case_summary(target_2_clean)
 ```
 
 
@@ -295,9 +326,23 @@ CA_URICA_d = (Action_URICA_d-Contemp_URICA_d)
 
 ```{r}
 tab1 =  CreateTableOne(data = target_2_clean, includeNA = TRUE)
-tab1
-write.csv(tab1, "tab1.csv")
+tab1 = print(tab1)
+write.csv(tab1, file = "tab1.csv")
 summary(tab1)
 
 ```
+
+```{r}
+library(mice)
+
+imp1_test = mice(target_2_clean[c(2,14:48)], visitSequence = "monotone")
+
+test_sum =  with(imp1_test, lm(INQ_PB_d_mean ~ INQ_PB_b_mean + ProgramPackage))
+summary(test_sum)
+
+summary(pool(test_sum))
+```
+
+
+
 
