@@ -26,7 +26,7 @@ Find errors in data entry
 ```{r}
 
 target_2_clean = target_2 %>%
-  select(1,2, 4, 5, 7, 19, 10, 12, 23, 24, 27:112, 138:213) %>%
+  select(1,2, 4, 7, 19, 10, 12, 23, 24, 27:112, 138:213) %>%
   # Remove all non-numeric numbers
   mutate_all(., as.numeric) %>%
   ### Remove this variable PPSb
@@ -87,7 +87,7 @@ distinct(ID, .keep_all = TRUE) %>%
   #filter(id_dup == TRUE)
   
 #write.csv(id_remove, "id_remove.csv", row.names = FALSE)
-target_2_clean
+library(prettyR)
 ```
 Create data sets for psycho tests
 ```{r}
@@ -298,9 +298,6 @@ target_2_clean =  target_2_clean %>%
   #Relocate variables based on part of name not super neccesary, but useful tool
   relocate(ends_with("_d_mean"), .after = last_col())
 
-
-
-test
 ```
 
 Check ranges and missingness
@@ -324,33 +321,43 @@ RTC_URICA_d = (Contemp_URICA_d+Action_URICA_d+Maintain_URICA_d)-Precomp_URICA_d
 CA_URICA_d = (Action_URICA_d-Contemp_URICA_d)
 
 ```{r}
-tab1 =  CreateTableOne(data = target_2_clean, includeNA = TRUE)
-tab1 = print(tab1)
+target_2_clean$ProgramPackage = as.character(target_2_clean$ProgramPackage)
+tab1 =  CreateTableOne(data = target_2_clean, includeNA = TRUE, factorVars = "ProgramPackage")
+tab1 = print(tab1, showAllLevels = TRUE)
 write.csv(tab1, file = "tab1.csv")
 summary(tab1)
 
 ```
+Create difference scores
+```{r}
+diff_out =  target_2_clean[c("INQ_PB_d_mean", "INQ_TB_d_mean", "RAS_GSO_d_mean", "RAS_PCH_d_mean", "RAS_NDS_d_mean","RAS_WAH_d_mean", "SD_SIS_d_mean", "RPP_SIS_d_mean", "SEASA_1_d_mean","SEASA_2_d_mean")] - target_2_clean[c("INQ_PB_b_mean", "INQ_TB_b_mean", "RAS_GSO_b_mean", "RAS_PCH_b_mean", "RAS_NDS_b_mean","RAS_WAH_b_mean", "SD_SIS_b_mean", "RPP_SIS_b_mean", "SEASA_1_b_mean","SEASA_2_b_mean")]
+colnames(diff_out) = c("INQ_PB_diff_z", "INQ_TB_diff_z", "RAS_GSO_diff_z", "RAS_PCH_diff_z", "RAS_NDS_diff_z","RAS_WAH_diff_z", "SD_SIS_diff_z", "RPP_SIS_diff_z", "SEASA_1_diff_z","SEASA_2_diff_z")
+diff_out = data.frame(scale(diff_out))
+target_2_clean =cbind(target_2_clean, diff_out)
+
+```
+
 
 Need both the imp mice dat and the imp_mice_complete
 imp_mice_complete used for getting the means and sds for cohen's D's
 ```{r}
-library(mice)
 
-#imp_mice_dat = mice(target_2_clean[c(2:48)], visitSequence = "monotone")
-#saveRDS(imp_mice_dat, "imp_mice_dat.rds")
+setwd("P:/Evaluation/TN Lives Count_Target2/Study 5_RELATE Enhanced Follow-up & Tech/3_Data/FINAL Relate Databases")
+imp_mice_dat = mice(target_2_clean[c(2:57)], visitSequence = "monotone")
+saveRDS(imp_mice_dat, "imp_mice_dat.rds")
 imp_mice_dat = readRDS("imp_mice_dat.rds")
 
 ## If you want long version use complete
-#imp_mice_dat_complete =  complete(imp_mice_dat, "all")
-#saveRDS(imp_mice_dat_complete, file = "imp_mice_dat_complete.rds")
-setwd("P:/Evaluation/TN Lives Count_Target2/Study 5_RELATE Enhanced Follow-up & Tech/3_Data/FINAL Relate Databases")
+imp_mice_dat_complete =  complete(imp_mice_dat, "all")
+saveRDS(imp_mice_dat_complete, file = "imp_mice_dat_complete.rds")
+
 imp_mice_dat_complete = readRDS("imp_mice_dat_complete.rds")
 ```
 Examples
 ```{r}
-test_sum =  with(imp1_test, lm(INQ_PB_d_mean ~ INQ_PB_b_mean + ProgramPackage))
+imp_mice_dat_complete[[1]]$SEASA_2_diff_z
+test_sum =  with(imp_mice_dat, lm(SEASA_2_diff_z ~ ProgramPackage))
 summary(pool(test_sum))
-t_test = with(imp1_test,t.test(INQ_PB_d_mean, INQ_PB_b_mean))
 
 summary(pool(t_test))
 with(imp1_test, apply(imp1_test, 2, mean))
@@ -360,7 +367,7 @@ target_2_clean
 
 Evaluate diagnostics from MICE
 ```{r}
-densityplot(x = imp_mice_dat, data =~ INQ_PB_d_mean + INQ_TB_d_mean + RAS_GSO_d_mean + RAS_PCH_d_mean + RAS_NDS_d_mean+RAS_WAH_d_mean + SD_SIS_d_mean + RPP_SIS_d_mean + SEASA_1_d_mean + SEASA_2_d_mean  )
+densityplot(x = imp_mice_dat, data =~ INQ_PB_diff_z + INQ_TB_diff_z + RAS_GSO_diff_z + RAS_PCH_diff_z  + RAS_NDS_diff_z + RAS_WAH_diff_z + SD_SIS_diff_z + RPP_SIS_diff_z + SEASA_1_diff_z + SEASA_2_diff_z)
 ```
 
 
@@ -368,26 +375,27 @@ Evaluate normality assumption
 Not normal need standardized difference scores
 ```{r}
 library(ggplot2)
-for(i in 1:length(imp1_test_complete)){
-  apply(imp_mice_dat_complete[[i]][13:47], 2, hist)
+for(i in 1:length(imp_mice_dat_complete)){
+  apply(imp_mice_dat_complete[[i]][47:56], 2, hist)
 }
 ```
-Create standardized differences scores
-Then use lm with 1 to conduct t-tests for overall effect
-Still need to get imputted means 
-INQ_PB_b_mean, INQ_TB_b_mean, RAS_GSO_b_mean, RAS_PCH_b_mean, RAS_NDS_b_mean, RAS_WAH_b_mean, SD_SIS_b_mean, RPP_SIS_b_mean, SEASA_1_b_mean, SEASA_2_b_mean, PHQ_b_mean, CAGE_b_mean
+Run t-test with lm for overall comparison
 
 ```{r}
-imp_mice_dat_complete_diff = imp_mice_dat_complete
-diff_out = list()
+target_within = imp_mice_dat %>% 
+  with(., lm(SEASA_2_diff_z ~ 1)) %>%
+  pool(.) %>%
+  summary(., conf.int = TRUE) %>%
+  data.frame(.) %>%
+  select(statistic, p.value, X2.5.., X97.5..) %>%
+  round(. , 3) %>%
+  rename(., "t-stat" = statistic, "p-value" = p.value, "Lower 95 CI" = X2.5.., "Upper 95 CI" = X97.5..)
+target_within
 
-for(i in 1:length(imp_mice_dat_complete)){
-  diff_out[[i]] =  imp_mice_dat_complete[[1]][c("INQ_PB_d_mean", "INQ_TB_d_mean", "RAS_GSO_d_mean", "RAS_PCH_d_mean", "RAS_NDS_d_mean","RAS_WAH_d_mean", "SD_SIS_d_mean", "RPP_SIS_d_mean", "SEASA_1_d_mean","SEASA_2_d_mean")] - imp_mice_dat_complete[[1]][c("INQ_PB_b_mean", "INQ_TB_b_mean", "RAS_GSO_b_mean", "RAS_PCH_b_mean", "RAS_NDS_b_mean","RAS_WAH_b_mean", "SD_SIS_b_mean", "RPP_SIS_b_mean", "SEASA_1_b_mean","SEASA_2_b_mean")]
-colnames(diff_out[[i]]) = c("INQ_PB_diff", "INQ_TB_diff", "RAS_GSO_diff", "RAS_PCH_diff", "RAS_NDS_diff","RAS_WAH_diff", "SD_SIS_diff", "RPP_SIS_diff", "SEASA_1_diff","SEASA_2_diff")
-diff_out[[i]] = data.frame(scale(diff_out[[i]]))
-imp_mice_dat_complete_diff[[i]] =cbind(imp_mice_dat_complete_diff[[i]], diff_out[[i]])
-}
+target_within =  with(imp_mice_dat, lm(SEASA_2_diff_z ~ ProgramPackage))
+target_within_sum =  pool(target_within)
+ 
 
 ```
-Run LM and t.test
+Cohen's D
 
