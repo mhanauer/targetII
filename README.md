@@ -363,29 +363,18 @@ within_complete_out = within_complete_out %>%
 within_complete_out
 
 ```
-Get amelia results
-13:46
-```{r}
-write.csv(target_2_clean, "target_2_clean.csv", row.names = FALSE)
-target_2_clean = read.csv("target_2_clean.csv", header = TRUE)
-a_out = amelia(target_2_clean[c(13:46)], m = 10)
-
-```
-
-
-
 Need both the imp mice dat and the imp_mice_complete
 imp_mice_complete used for getting the means and sds for cohen's D's
 ```{r}
 
 setwd("P:/Evaluation/TN Lives Count_Target2/Study 5_RELATE Enhanced Follow-up & Tech/3_Data/FINAL Relate Databases")
-imp_mice_dat = mice(m = 10, target_2_clean[c(2:46)], visitSequence = "monotone")
-saveRDS(imp_mice_dat, "imp_mice_dat.rds")
+#imp_mice_dat = mice(m = 10, target_2_clean[c(2:46)], visitSequence = "monotone")
+#saveRDS(imp_mice_dat, "imp_mice_dat.rds")
 imp_mice_dat = readRDS("imp_mice_dat.rds")
 
 ## If you want long version use complete
-imp_mice_dat_complete =  complete(imp_mice_dat, "all")
-saveRDS(imp_mice_dat_complete, file = "imp_mice_dat_complete.rds")
+#imp_mice_dat_complete =  complete(imp_mice_dat, "all")
+#saveRDS(imp_mice_dat_complete, file = "imp_mice_dat_complete.rds")
 
 imp_mice_dat_complete = readRDS("imp_mice_dat_complete.rds")
 imp_mice_dat_complete[[1]]
