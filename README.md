@@ -256,8 +256,6 @@ write.csv(par_out_loop_clean, "par_out_loop_clean.csv")
 
 
 ```
-
-
 Create average scores and subset data
 ```{r}
 
@@ -332,22 +330,52 @@ diff_scores = target_2_clean_within[14:23] - target_2_clean_within[37:46]
 names(diff_scores) = c("INQ_PB_diff", "INQ_TB_diff", "RAS_GSO_diff", "RAS_PCH_diff", "RAS_NDS_diff","RAS_WAH_diff", "SD_SIS_diff", "RPP_SIS_diff", "SEASA_1_diff","SEASA_2_diff")
 
 target_2_clean_within = cbind(target_2_clean_within, diff_scores)
-target_2_clean_within = na.omit(target_2_clean_within)
-dim(target_2_clean_within)
 ```
 
-
-Get complete analyses within
+###########################
+Within pairwise deletion
+###########################
 ```{r}
 names_diff =c("INQ_PB_diff", "INQ_TB_diff", "RAS_GSO_diff", "RAS_PCH_diff", "RAS_NDS_diff","RAS_WAH_diff", "SD_SIS_diff", "RPP_SIS_diff", "SEASA_1_diff","SEASA_2_diff")
 
 
-within_complete = lm(cbind(INQ_PB_diff, INQ_TB_diff, RAS_GSO_diff, RAS_PCH_diff, RAS_NDS_diff,RAS_WAH_diff, SD_SIS_diff, RPP_SIS_diff, SEASA_1_diff,SEASA_2_diff) ~ 1, data = target_2_clean_within)
+within_pair = lm(cbind(INQ_PB_diff, INQ_TB_diff, RAS_GSO_diff, RAS_PCH_diff, RAS_NDS_diff,RAS_WAH_diff, SD_SIS_diff, RPP_SIS_diff, SEASA_1_diff,SEASA_2_diff) ~ 1, data = target_2_clean_within)
+within_pair_sum = summary(within_pair)
+
+### Grab results 
+within_pair_out = list()
+ci_within_pair_out = list()
+for(i in 1:10){
+ within_pair_out[[i]] =  within_pair_sum[[i]]$coefficients[,3:4]
+}
+within_pair_out = within_pair_out %>%
+  unlist(.) %>%
+  matrix(., ncol = 2, byrow = TRUE) %>%
+  round(., 3) %>%
+  data.frame(.) %>%
+  rename("t-stat" = X1, "p-value" = X2) %>%
+  mutate(names_diff = names_diff) %>%
+  relocate(names_diff)
+
+within_pair_out
+
+```
+###########################
+Within complete case
+##########################
+```{r}
+
+target_2_clean_within_complete = na.omit(target_2_clean_within)
+
+names_diff =c("INQ_PB_diff", "INQ_TB_diff", "RAS_GSO_diff", "RAS_PCH_diff", "RAS_NDS_diff","RAS_WAH_diff", "SD_SIS_diff", "RPP_SIS_diff", "SEASA_1_diff","SEASA_2_diff")
+
+
+within_complete = lm(cbind(INQ_PB_diff, INQ_TB_diff, RAS_GSO_diff, RAS_PCH_diff, RAS_NDS_diff,RAS_WAH_diff, SD_SIS_diff, RPP_SIS_diff, SEASA_1_diff,SEASA_2_diff) ~ 1, data = target_2_clean_within_complete)
 within_complete_sum = summary(within_complete)
 
 ### Grab results 
 within_complete_out = list()
-ci_within_out = list()
+ci_within_complete_out = list()
 for(i in 1:10){
  within_complete_out[[i]] =  within_complete_sum[[i]]$coefficients[,3:4]
 }
@@ -363,12 +391,13 @@ within_complete_out = within_complete_out %>%
 within_complete_out
 
 ```
+
 Need both the imp mice dat and the imp_mice_complete
 imp_mice_complete used for getting the means and sds for cohen's D's
 ```{r}
 
 setwd("P:/Evaluation/TN Lives Count_Target2/Study 5_RELATE Enhanced Follow-up & Tech/3_Data/FINAL Relate Databases")
-#imp_mice_dat = mice(m = 10, target_2_clean[c(2:46)], visitSequence = "monotone")
+#imp_mice_dat = mice(m = 10, target_2_clean_within[c(2:56)], visitSequence = "monotone")
 #saveRDS(imp_mice_dat, "imp_mice_dat.rds")
 imp_mice_dat = readRDS("imp_mice_dat.rds")
 
@@ -385,15 +414,7 @@ imp_mice_dat_complete[[1]]
 Compute the differences scores
 ```{r}
 imp_mice_dat_complete_diff = imp_mice_dat_complete
-diff_out = list()
 dif_scaled_out = list()
-
-for(i in 1:length(imp_mice_dat_complete)){
-  diff_out[[i]] =  imp_mice_dat_complete[[i]][c("INQ_PB_d_mean", "INQ_TB_d_mean", "RAS_GSO_d_mean", "RAS_PCH_d_mean", "RAS_NDS_d_mean","RAS_WAH_d_mean", "SD_SIS_d_mean", "RPP_SIS_d_mean", "SEASA_1_d_mean","SEASA_2_d_mean")] - imp_mice_dat_complete[[i]][c("INQ_PB_b_mean", "INQ_TB_b_mean", "RAS_GSO_b_mean", "RAS_PCH_b_mean", "RAS_NDS_b_mean","RAS_WAH_b_mean", "SD_SIS_b_mean", "RPP_SIS_b_mean", "SEASA_1_b_mean","SEASA_2_b_mean")]
-colnames(diff_out[[i]]) = c("INQ_PB_diff", "INQ_TB_diff", "RAS_GSO_diff", "RAS_PCH_diff", "RAS_NDS_diff","RAS_WAH_diff", "SD_SIS_diff", "RPP_SIS_diff", "SEASA_1_diff","SEASA_2_diff")
-diff_out[[i]] = data.frame(diff_out[[i]])
-imp_mice_dat_complete_diff[[i]] =cbind(imp_mice_dat_complete_diff[[i]], diff_out[[i]])
-}
 
 
 for(i in 1:length(imp_mice_dat_complete)){
