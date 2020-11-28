@@ -19,6 +19,7 @@ library(broom)
 library(tableone)
 library(mice)
 library(Amelia)
+library(prettyR)
 library(ggplot2)
 ```
 
@@ -83,46 +84,48 @@ distinct(ID, .keep_all = TRUE) %>%
     Employment == "5" ~ "Disabled",
     Employment == "6" ~ "Student",
     Employment == "7" ~ "Not in the labor force"
-  ))
+  )) %>%
+  ## Reverse score last item
+  mutate(CSQ8 = 5-CSQ8)
   ## values to remove
 #id_remove = target_2_clean %>%
   #filter(id_dup == TRUE)
   
 #write.csv(id_remove, "id_remove.csv", row.names = FALSE)
-library(prettyR)
+target_2_clean
 ```
 Create data sets for psycho tests
 ```{r}
-INQ_PB_b = target_2_clean[,11:15]
-INQ_TB_b = target_2_clean[,16:20]
-INQ_PB_d = target_2_clean[,96:100]
-INQ_TB_d = target_2_clean[,101:105]
+INQ_PB_b = target_2_clean[,10:14]
+INQ_TB_b = target_2_clean[,15:19]
+INQ_PB_d = target_2_clean[,95:99]
+INQ_TB_d = target_2_clean[,100:104]
 ### Reverse score 2,3, and 5
 ### 0 to 4 scale
-ACCS_b = target_2_clean[,21:27]
+ACCS_b = target_2_clean[,20:26]
 
 ### RAS_GSO_b 1 through 5 and 20
-RAS_GSO_b = target_2_clean[c(28:32, 47)]
-RAS_GSO_d = target_2_clean[c(106:110, 125)]
+RAS_GSO_b = target_2_clean[c(27:31, 46)]
+RAS_GSO_d = target_2_clean[c(105:109, 124)]
 #### RAS_PCH_b 6 through 13
-RAS_PCH_b = target_2_clean[,33:40]
-RAS_PCH_d = target_2_clean[,111:118]
+RAS_PCH_b = target_2_clean[,32:39]
+RAS_PCH_d = target_2_clean[,110:117]
 
 ### NDS 14 through 16
-RAS_NDS_b = target_2_clean[,41:43]
-RAS_NDS_d = target_2_clean[,119:121]
+RAS_NDS_b = target_2_clean[,40:42]
+RAS_NDS_d = target_2_clean[,118:120]
 
 #### WAH 17 through 19
-RAS_WAH_b = target_2_clean[,44:46]
-RAS_WAH_d = target_2_clean[,122:124]
+RAS_WAH_b = target_2_clean[,43:45]
+RAS_WAH_d = target_2_clean[,121:123]
 
 ### SD
 #SIS5b: I have felt life just isn’t worth living
 #SIS6b: Life has been so bad, I’ve felt like giving up
 #SIS7b: I’ve just wished my life would end 
 #SIS8b: I’ve felt it would be better off for everyone involved if I were to die
-SD_SIS_b = target_2_clean[,52:55]
-SD_SIS_d = target_2_clean[,130:133]
+SD_SIS_b = target_2_clean[,51:54]
+SD_SIS_d = target_2_clean[,129:132]
 
 ####RPP
 #SIS1b: I have been thinking of ways to kill myself
@@ -131,8 +134,8 @@ SD_SIS_d = target_2_clean[,130:133]
 #SIS4b: I have made attempts to kill myself
 #SIS9b: I’ve felt there is no solution to my problems other than to end my own life
 #SIS10b:I’ve come close to taking my own life 
-RPP_SIS_b = target_2_clean[,c(48:51, 56, 57)]
-RPP_SIS_d = target_2_clean[,c(126:129, 134, 135)]
+RPP_SIS_b = target_2_clean[,c(47:50, 55, 56)]
+RPP_SIS_d = target_2_clean[,c(125:128, 133, 134)]
 
 ### To create ""readiness to change" score get average score across all four subscales then sum comtemplation, action, and maintenance and then subtract preconemplation.
 #https://habitslab.umbc.edu/urica-readiness-score/
@@ -168,7 +171,6 @@ PHQ_b = target_2_clean[c("PHQ91b", "PHQ92b", "PHQ93b")]
 
 ### Cage
 CAGE_b = target_2_clean[c("CAGE1b", "CAGE2b", "CAGE3b", "CAGE4b")]
-CAGE_d = target_2_clean[c("CAGE1b", "CAGE2b", "CAGE3b", "CAGE4b")]
 
 
 WAI = target_2_clean[c("WAI1", "WAI2", "WAI3", "WAI4")]
@@ -180,23 +182,23 @@ CSQ8 = target_2_clean %>%
 ```
 Create function for running through MAP, Parallel, and Omega
 ```{r}
-constructs = list(INQ_PB_b, INQ_PB_d, INQ_TB_b, INQ_TB_d, ACCS_b, RAS_GSO_b, RAS_GSO_d, RAS_PCH_b, RAS_PCH_d, RAS_NDS_b, RAS_NDS_d, RAS_WAH_b, RAS_WAH_d, SD_SIS_b, SD_SIS_d, RPP_SIS_b, RPP_SIS_d, Precomp_URICA_b, Precomp_URICA_d, Contemp_URICA_b, Contemp_URICA_d, Action_URICA_b, Action_URICA_d, Maintain_URICA_b, Maintain_URICA_b, SEASA_1_b, SEASA_2_b, SEASA_1_d, PTSD_b, PHQ_b, CAGE_b, CAGE_d, WAI, CSQ8)
+constructs = list(INQ_PB_b, INQ_PB_d, INQ_TB_b, INQ_TB_d, ACCS_b, RAS_GSO_b, RAS_GSO_d, RAS_PCH_b, RAS_PCH_d, RAS_NDS_b, RAS_NDS_d, RAS_WAH_b, RAS_WAH_d, SD_SIS_b, SD_SIS_d, RPP_SIS_b, RPP_SIS_d, Precomp_URICA_b, Precomp_URICA_d, Contemp_URICA_b, Contemp_URICA_d, Action_URICA_b, Action_URICA_d, Maintain_URICA_b, Maintain_URICA_b, SEASA_1_b, SEASA_2_b, SEASA_1_d, PTSD_b, PHQ_b, CAGE_b, WAI, CSQ8)
 
 
 alpha_fun = function(x){
-  alpha_out = summary(alpha(x))
+  alpha_out = summary(psych::alpha(x))
   alpha_out = round(alpha_out$std.alpha,2)
   return(alpha_out)
 }
 map_fun = function(x){
-  map_out =  vss(x, n = 3)
+  map_out =  psych::vss(x, n = 3)
   map_out = round(map_out$map, 2)
   return(map_out)
 }
 
 
 par_fun = function(x){
-  par_out = fa.parallel(x, fa = "fa")
+  par_out = psych::fa.parallel(x, fa = "fa")
   par_out = par_out$nfact
 }
 
@@ -211,7 +213,7 @@ for(i in 1:length(constructs)){
   par_out_loop[[i]] = par_fun(x = constructs[[i]])
 }
 
-names(alpha_out_loop) = c("INQ_PB_b", "INQ_PB_d", "INQ_TB_b", "INQ_TB_d", "ACCS_b", "RAS_GSO_b", "RAS_GSO_d", "RAS_PCH_b", "RAS_PCH_d", "RAS_NDS_b", "RAS_NDS_d", "RAS_WAH_b", "RAS_WAH_d", "SD_SIS_b", "SD_SIS_d","RPP_SIS_b", "RPP_SIS_d", "Precomp_URICA_b", "Precomp_URICA_d", "Contemp_URICA_b", "Contemp_URICA_d", "Action_URICA_b", "Action_URICA_d", "Maintain_URICA_b", "Maintain_URICA_b", "SEASA_1_b", "SEASA_2_b","SEASA_1_d", "PTSD_b", "PHQ_b", "CAGE_b", "CAGE_d", "WAI", "CSQ8") 
+names(alpha_out_loop) = c("INQ_PB_b", "INQ_PB_d", "INQ_TB_b", "INQ_TB_d", "ACCS_b", "RAS_GSO_b", "RAS_GSO_d", "RAS_PCH_b", "RAS_PCH_d", "RAS_NDS_b", "RAS_NDS_d", "RAS_WAH_b", "RAS_WAH_d", "SD_SIS_b", "SD_SIS_d","RPP_SIS_b", "RPP_SIS_d", "Precomp_URICA_b", "Precomp_URICA_d", "Contemp_URICA_b", "Contemp_URICA_d", "Action_URICA_b", "Action_URICA_d", "Maintain_URICA_b", "Maintain_URICA_d", "SEASA_1_b", "SEASA_2_b","SEASA_1_d", "PTSD_b", "PHQ_b", "CAGE_b", "WAI", "CSQ8") 
 # save names for other analyses
 names_psych =  names(alpha_out_loop) 
 names(map_out_loop) = names_psych 
@@ -261,23 +263,23 @@ Create average scores and subset data
 
 target_2_clean =  target_2_clean %>%
   rowwise() %>%
-  mutate(INQ_PB_b_mean = mean(c_across(11:15), na.rm = TRUE),
-         INQ_TB_b_mean = mean(c_across(16:20), na.rm = TRUE),
-         INQ_PB_d_mean = mean(c_across(96:100), na.rm = TRUE),
-         INQ_TB_d_mean = mean(c_across(101:105), na.rm = TRUE),
-         ACCS_b_mean = mean(c_across(21:27), na.rm = TRUE),
-         RAS_GSO_b_mean = mean(c_across(c(28:32, 47)), na.rm = TRUE),
-         RAS_GSO_d_mean = mean(c_across(c(106:110, 125)), na.rm = TRUE),
-         RAS_PCH_b_mean = mean(c_across(33:40), na.rm = TRUE),
-         RAS_PCH_d_mean = mean(c_across(111:118), na.rm = TRUE),
-         RAS_NDS_b_mean = mean(c_across(41:43), na.rm = TRUE),
-         RAS_NDS_d_mean = mean(c_across(119:121), na.rm = TRUE),
-         RAS_WAH_b_mean = mean(c_across(44:46), na.rm = TRUE),
-         RAS_WAH_d_mean = mean(c_across(122:124), na.rm = TRUE),
-         SD_SIS_b_mean = mean(c_across(52:55), na.rm = TRUE),
-         SD_SIS_d_mean = mean(c_across(130:133), na.rm = TRUE),
-         RPP_SIS_b_mean = mean(c_across(c(48:51, 56, 57)), na.rm = TRUE), 
-         RPP_SIS_d_mean = mean(c_across(c(126:129, 134, 135)), na.rm = TRUE),
+  mutate(INQ_PB_b_mean = mean(c_across(10:14), na.rm = TRUE),
+         INQ_TB_b_mean = mean(c_across(15:19), na.rm = TRUE),
+         INQ_PB_d_mean = mean(c_across(95:99), na.rm = TRUE),
+         INQ_TB_d_mean = mean(c_across(100:104), na.rm = TRUE),
+         ACCS_b_mean = mean(c_across(20:26), na.rm = TRUE),
+         RAS_GSO_b_mean = mean(c_across(c(27:31, 46)), na.rm = TRUE),
+         RAS_GSO_d_mean = mean(c_across(c(105:109, 124)), na.rm = TRUE),
+         RAS_PCH_b_mean = mean(c_across(32:39), na.rm = TRUE),
+         RAS_PCH_d_mean = mean(c_across(110:117), na.rm = TRUE),
+         RAS_NDS_b_mean = mean(c_across(40:42), na.rm = TRUE),
+         RAS_NDS_d_mean = mean(c_across(118:120), na.rm = TRUE),
+         RAS_WAH_b_mean = mean(c_across(43:45), na.rm = TRUE),
+         RAS_WAH_d_mean = mean(c_across(121:123), na.rm = TRUE),
+         SD_SIS_b_mean = mean(c_across(51:54), na.rm = TRUE),
+         SD_SIS_d_mean = mean(c_across(129:132), na.rm = TRUE),
+         RPP_SIS_b_mean = mean(c_across(c(47:50, 55, 56)), na.rm = TRUE), 
+         RPP_SIS_d_mean = mean(c_across(c(125:128, 133, 134)), na.rm = TRUE),
          SEASA_1_b_mean = mean(c_across(c("SEASA1b", "SEASA2b", "SEASA3b", "SEASA4b", "SEASA5b", "SEASA6b")), na.rm = TRUE),
          SEASA_1_d_mean = mean(c_across(c("SEASA1d", "SEASA2d", "SEASA3d", "SEASA4d", "SEASA5d", "SEASA6d")), na.rm = TRUE),
          SEASA_2_b_mean = mean(c_across(c("SEASA8b", "SEASA9b", "SEASA10b", "SEASA12b")), na.rm = TRUE), 
@@ -285,7 +287,6 @@ target_2_clean =  target_2_clean %>%
          PTSD_b_mean = mean(c_across(c("PTSD1b", "PTSD2b", "PTSD3b", "PTSD4b")), na.rm = TRUE),
          PHQ_b_mean = mean(c_across(c("PHQ91b", "PHQ92b", "PHQ93b")), na.rm = TRUE),
          CAGE_b_mean = mean(c_across(c("CAGE1b", "CAGE2b", "CAGE3b", "CAGE4b")), na.rm = TRUE),
-         CAGE_d_mean = mean(c_across(c("CAGE1b", "CAGE2b", "CAGE3b", "CAGE4b")), na.rm = TRUE), 
          Precomp_URICA_b = mean(c_across(c("URICA1b", "URICA9b", "URICA11b")), na.rm = TRUE),
          Precomp_URICA_d = mean(c_across(c("URICA1d", "URICA9d", "URICA11d")), na.rm = TRUE),
          Contemp_URICA_b_sum = sum(c_across(c("URICA4b", "URICA5b", "URICA7b")), na.rm = TRUE),
@@ -299,7 +300,7 @@ target_2_clean =  target_2_clean %>%
   select(c(ID:Employment, PTSDScreen, CAGE_AScreen, CAGE_DScreen, INQ_PB_b_mean:CSQ8_mean)) %>%
   #Relocate variables based on part of name not super neccesary, but useful tool
   relocate(ends_with("_d_mean"), .after = last_col())
-
+target_2_clean
 ```
 
 Check ranges and missingness
@@ -330,23 +331,58 @@ write.csv(tab1, file = "tab1.csv")
 summary(tab1)
 
 ```
+Create difference scores for normality
+```{r}
+target_2_clean_within = target_2_clean
+
+diff_scores = target_2_clean_within[14:23] - target_2_clean_within[37:46]
+
+names(diff_scores) = c("INQ_PB_diff", "INQ_TB_diff", "RAS_GSO_diff", "RAS_PCH_diff", "RAS_NDS_diff","RAS_WAH_diff", "SD_SIS_diff", "RPP_SIS_diff", "SEASA_1_diff","SEASA_2_diff")
+
+target_2_clean_within = cbind(target_2_clean_within, diff_scores)
+target_2_clean_within = na.omit(target_2_clean_within)
+dim(target_2_clean_within)
+```
+
+
+Get complete analyses within
+```{r}
+
+within_complete_out = lm(cbind(INQ_PB_diff, INQ_TB_diff, RAS_GSO_diff, RAS_PCH_diff, RAS_NDS_diff,RAS_WAH_diff, SD_SIS_diff, RPP_SIS_diff, SEASA_1_diff,SEASA_2_diff) ~ 1, data = target_2_clean_within)
+within_complete_out_sum = summary(within_complete_out)
+within_complete_out_sum
+
+```
+Get amelia results
+13:46
+```{r}
+write.csv(target_2_clean, "target_2_clean.csv", row.names = FALSE)
+target_2_clean = read.csv("target_2_clean.csv", header = TRUE)
+a_out = amelia(target_2_clean[c(13:46)], m = 10)
+
+```
+
+
 
 Need both the imp mice dat and the imp_mice_complete
 imp_mice_complete used for getting the means and sds for cohen's D's
 ```{r}
 
 setwd("P:/Evaluation/TN Lives Count_Target2/Study 5_RELATE Enhanced Follow-up & Tech/3_Data/FINAL Relate Databases")
-#imp_mice_dat = mice(m = 10, target_2_clean[c(2:47)], visitSequence = "monotone")
-#saveRDS(imp_mice_dat, "imp_mice_dat.rds")
+imp_mice_dat = mice(m = 10, target_2_clean[c(2:46)], visitSequence = "monotone")
+saveRDS(imp_mice_dat, "imp_mice_dat.rds")
 imp_mice_dat = readRDS("imp_mice_dat.rds")
 
 ## If you want long version use complete
-#imp_mice_dat_complete =  complete(imp_mice_dat, "all")
-#saveRDS(imp_mice_dat_complete, file = "imp_mice_dat_complete.rds")
+imp_mice_dat_complete =  complete(imp_mice_dat, "all")
+saveRDS(imp_mice_dat_complete, file = "imp_mice_dat_complete.rds")
 
 imp_mice_dat_complete = readRDS("imp_mice_dat_complete.rds")
 imp_mice_dat_complete[[1]]
 ```
+
+
+
 Compute the differences scores
 ```{r}
 imp_mice_dat_complete_diff = imp_mice_dat_complete
@@ -368,7 +404,9 @@ dif_scaled_out[[i]] = data.frame(scale(dif_scaled_out[[i]]))
 imp_mice_dat_complete_diff[[i]] =cbind(imp_mice_dat_complete_diff[[i]], dif_scaled_out[[i]])
 }
 
-imp_mice_dat_complete_diff[[1]]
+imp_mice_dat_complete_diff[[1]] %>%
+  dplyr::select(RPP_SIS_diff, RPP_SIS_d_mean, RPP_SIS_b_mean)
+  
 ```
 
 
@@ -376,24 +414,12 @@ Examples
 Compute differences scores after imputation and just the list data set
 
 ```{r}
-imp_mice_dat_complete[[1]]$SEASA_2_diff_z
 
 
-summary(lm(RAS_GSO_diff ~ 1, data = imp_mice_dat_complete_diff[[1]])) 
 
-test_sum =  with(imp_mice_dat, lm(INQ_TB_diff_z ~ 1))
-summary(pool(test_sum))
-
-test_t =  with(imp_mice_dat, t.test(INQ_PB_d_mean, INQ_PB_b_mean))
-summary(test_t)
-#INQ_PB_diff_z
-test_t =  with(imp_mice_dat, t.test(INQ_PB_diff_z))
-summary(test_t)
+summary(lm(RAS_GSO_diff ~ 1, data = imp_mice_dat_complete_diff[[10]])) 
 
 
-summary(pool(t_test))
-with(imp1_test, apply(imp1_test, 2, mean))
-target_2_clean
 ```
 
 
@@ -531,6 +557,8 @@ within_ses_list = within_ses_list %>%
 within_ses_list
 
 within_coefs_ses = mi.meld(within_coef_list, within_ses_list)
+within_coefs_ses
+
 
 par= t(within_coefs_ses$q.mi)
 par = data.frame(par = par)
@@ -553,6 +581,7 @@ within_results = within_results %>%
   relocate(names)
 within_results
 
+write.csv(within_results, "within_results.csv", row.names = FALSE)
 ```
 ##################################
 Mean, SD, and Cohen's D for within
@@ -571,8 +600,8 @@ length(apply(imp_mice_dat_complete_diff[[1]][c(12:22, 26:45)], 2, mean))
 for(i in 1:length(imp_mice_dat_complete_diff)){
   mean_within[[i]] = apply(imp_mice_dat_complete_diff[[i]][c(12:22, 26:45)], 2, mean)
   sd_within[[i]] =  apply(imp_mice_dat_complete_diff[[i]][c(12:22, 26:45)], 2, sd)
-  mean_diff_within[[i]] = apply(imp_mice_dat_complete_diff[[i]][c(47:56)], 2, mean)
-  sd_diff_within[[i]] =  apply(imp_mice_dat_complete_diff[[i]][c(47:56)], 2, sd)
+  mean_diff_within[[i]] = apply(imp_mice_dat_complete_diff[[i]][c(46:55)], 2, mean)
+  sd_diff_within[[i]] =  apply(imp_mice_dat_complete_diff[[i]][c(46:55)], 2, sd)
 }
 
 mean_within = mean_within %>%
@@ -590,11 +619,31 @@ mean_within = data.frame(mean_within = mean_within)
 sd_within = t(mean_sd_within$se.mi)
 sd_within = data.frame(sd_within = sd_within)
 combine_mean_sd = data.frame(mean_within, sd_within)
+mean_sd_names = names(imp_mice_dat_complete_diff[[1]][c(12:22, 26:45)])
+combine_mean_sd_impute = combine_mean_sd %>%
+  mutate(names = mean_sd_names) %>%
+  relocate(names) %>%
+  mutate_at(2:3, round, 3)
+write.csv(combine_mean_sd_impute, "combine_mean_sd_impute.csv", row.names = FALSE)
 
-### Create critical t and df outside only need one
+##### Combine for Cohen's D
+mean_diff_within = mean_diff_within %>%
+  unlist(.) %>%
+  matrix(., ncol = 10)
+  
+sd_diff_within = sd_diff_within %>%
+  unlist(.) %>%
+  matrix(., ncol = 10)
 
 
-
+cohen_d_diff = round(mean_diff_within / sd_diff_within, 2)
+cohen_d_diff = apply(cohen_d_diff, 2, mean)
+cohen_d_diff = data.frame(t(data.frame(t(cohen_d_diff))))
+cohen_d_diff$names = names(imp_mice_dat_complete_diff[[1]][c(46:55)])
+names(cohen_d_diff)[1] = "cohen_d"
+cohen_d_diff = cohen_d_diff %>%
+  relocate(names)
+write.csv(cohen_d_diff, "cohen_d_diff.csv", row.names = FALSE)
 ```
 
 
