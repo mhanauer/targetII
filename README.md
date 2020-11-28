@@ -314,15 +314,7 @@ miss_percent = miss_case_summary(target_2_clean)
 ```
 
 
-
-After imputation create these scores
-
-RTC_URICA_b = (Contemp_URICA_b+Action_URICA_b+Maintain_URICA_b)-Precomp_URICA_b
-CA_URICA_b = (Action_URICA_b-Contemp_URICA_b)
-
-RTC_URICA_d = (Contemp_URICA_d+Action_URICA_d+Maintain_URICA_d)-Precomp_URICA_d
-CA_URICA_d = (Action_URICA_d-Contemp_URICA_d)
-
+Descriptive stats
 ```{r}
 target_2_clean$ProgramPackage = as.character(target_2_clean$ProgramPackage)
 tab1 =  CreateTableOne(data = target_2_clean, includeNA = TRUE, factorVars = "ProgramPackage")
@@ -347,10 +339,28 @@ dim(target_2_clean_within)
 
 Get complete analyses within
 ```{r}
+names_diff =c("INQ_PB_diff", "INQ_TB_diff", "RAS_GSO_diff", "RAS_PCH_diff", "RAS_NDS_diff","RAS_WAH_diff", "SD_SIS_diff", "RPP_SIS_diff", "SEASA_1_diff","SEASA_2_diff")
 
-within_complete_out = lm(cbind(INQ_PB_diff, INQ_TB_diff, RAS_GSO_diff, RAS_PCH_diff, RAS_NDS_diff,RAS_WAH_diff, SD_SIS_diff, RPP_SIS_diff, SEASA_1_diff,SEASA_2_diff) ~ 1, data = target_2_clean_within)
-within_complete_out_sum = summary(within_complete_out)
-within_complete_out_sum
+
+within_complete = lm(cbind(INQ_PB_diff, INQ_TB_diff, RAS_GSO_diff, RAS_PCH_diff, RAS_NDS_diff,RAS_WAH_diff, SD_SIS_diff, RPP_SIS_diff, SEASA_1_diff,SEASA_2_diff) ~ 1, data = target_2_clean_within)
+within_complete_sum = summary(within_complete)
+
+### Grab results 
+within_complete_out = list()
+ci_within_out = list()
+for(i in 1:10){
+ within_complete_out[[i]] =  within_complete_sum[[i]]$coefficients[,3:4]
+}
+within_complete_out = within_complete_out %>%
+  unlist(.) %>%
+  matrix(., ncol = 2, byrow = TRUE) %>%
+  round(., 3) %>%
+  data.frame(.) %>%
+  rename("t-stat" = X1, "p-value" = X2) %>%
+  mutate(names_diff = names_diff) %>%
+  relocate(names_diff)
+
+within_complete_out
 
 ```
 Get amelia results
