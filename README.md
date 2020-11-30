@@ -48,7 +48,7 @@ target_2_clean = target_2 %>%
   arrange(ID_single) %>%
   relocate(ID, ID_single, id_dup) %>%
   ## Drop those who do not have the exact same id that you need to remove from the id_remove sheet
-  filter(!ID %in% c(5.3, 5.4, 270.1, 270.2, 449.1, 449.1, 495.1, 495.2, 623.3, 1074, 1074.1, 1103, 1103.1, 1104, 1104.1, 1129.2, 1129.3)) %>%
+  filter(!ID %in% c(5.3, 5.4, 270.2, 270.2, 495.1, 495.2, 623.2, 1074, 1103, 1104.1, 1129.3)) %>%
   ## Now you can keep instance of duplicates
 distinct(ID, .keep_all = TRUE) %>%
   select(-c(ID_single, id_dup)) %>%
@@ -88,98 +88,11 @@ distinct(ID, .keep_all = TRUE) %>%
   ## Reverse score last item
   mutate(CSQ8 = 5-CSQ8)
   ## values to remove
-#id_remove = target_2_clean %>%
-  #filter(id_dup == TRUE)
   
 #write.csv(id_remove, "id_remove.csv", row.names = FALSE)
 target_2_clean
 ```
-Create data sets for psycho tests
-```{r}
-INQ_PB_b = target_2_clean[,10:14]
-INQ_TB_b = target_2_clean[,15:19]
-INQ_PB_d = target_2_clean[,95:99]
-INQ_TB_d = target_2_clean[,100:104]
-### Reverse score 2,3, and 5
-### 0 to 4 scale
-ACCS_b = target_2_clean[,20:26]
 
-### RAS_GSO_b 1 through 5 and 20
-RAS_GSO_b = target_2_clean[c(27:31, 46)]
-RAS_GSO_d = target_2_clean[c(105:109, 124)]
-#### RAS_PCH_b 6 through 13
-RAS_PCH_b = target_2_clean[,32:39]
-RAS_PCH_d = target_2_clean[,110:117]
-
-### NDS 14 through 16
-RAS_NDS_b = target_2_clean[,40:42]
-RAS_NDS_d = target_2_clean[,118:120]
-
-#### WAH 17 through 19
-RAS_WAH_b = target_2_clean[,43:45]
-RAS_WAH_d = target_2_clean[,121:123]
-
-### SD
-#SIS5b: I have felt life just isn’t worth living
-#SIS6b: Life has been so bad, I’ve felt like giving up
-#SIS7b: I’ve just wished my life would end 
-#SIS8b: I’ve felt it would be better off for everyone involved if I were to die
-SD_SIS_b = target_2_clean[,51:54]
-SD_SIS_d = target_2_clean[,129:132]
-
-####RPP
-#SIS1b: I have been thinking of ways to kill myself
-#SIS2b: I have told someone I want to kill myself
-#SIS3b: I have believed my life will end in suicide
-#SIS4b: I have made attempts to kill myself
-#SIS9b: I’ve felt there is no solution to my problems other than to end my own life
-#SIS10b:I’ve come close to taking my own life 
-RPP_SIS_b = target_2_clean[,c(47:50, 55, 56)]
-RPP_SIS_d = target_2_clean[,c(125:128, 133, 134)]
-
-### To create ""readiness to change" score get average score across all four subscales then sum comtemplation, action, and maintenance and then subtract preconemplation.
-#https://habitslab.umbc.edu/urica-readiness-score/
-## 1, 9, 11
-Precomp_URICA_b = target_2_clean[c("URICA1b", "URICA9b", "URICA11b")]
-Precomp_URICA_d = target_2_clean[c("URICA1d", "URICA9d", "URICA11d")]
-
-Contemp_URICA_b = target_2_clean[c("URICA4b", "URICA5b", "URICA7b")]
-Contemp_URICA_d = target_2_clean[c("URICA4d", "URICA5d", "URICA7d")]
-
-
-Action_URICA_b = target_2_clean[c("URICA2b", "URICA3b", "URICA12b")]
-Action_URICA_d = target_2_clean[c("URICA2d", "URICA3d", "URICA12d")]
-
-Maintain_URICA_b = target_2_clean[c("URICA6b", "URICA8b", "URICA10b")]
-Maintain_URICA_d = target_2_clean[c("URICA6d", "URICA8d", "URICA10d")]
-
-
-
-
-## 1, 2, 3, 4, 5, 6
-SEASA_1_b = target_2_clean[c("SEASA1b", "SEASA2b", "SEASA3b", "SEASA4b", "SEASA5b", "SEASA6b")]
-SEASA_1_d = target_2_clean[c("SEASA1d", "SEASA2d", "SEASA3d", "SEASA4d", "SEASA5d", "SEASA6d")]
-### 8, 9, 10, 12
-SEASA_2_b = target_2_clean[c("SEASA8b", "SEASA9b", "SEASA10b", "SEASA12b")]
-SEASA_2_d = target_2_clean[c("SEASA8d", "SEASA9d", "SEASA10d", "SEASA12d")]
-
-#PTSD
-PTSD_b =  target_2_clean[c("PTSD1b", "PTSD2b", "PTSD3b", "PTSD4b")]
-
-##PHQ
-PHQ_b = target_2_clean[c("PHQ91b", "PHQ92b", "PHQ93b")]
-
-### Cage
-CAGE_b = target_2_clean[c("CAGE1b", "CAGE2b", "CAGE3b", "CAGE4b")]
-
-
-WAI = target_2_clean[c("WAI1", "WAI2", "WAI3", "WAI4")]
-
-CSQ8 = target_2_clean %>%
-  select(CSQ1:CSQ8)
-
-
-```
 Create function for running through MAP, Parallel, and Omega
 ```{r}
 constructs = list(INQ_PB_b, INQ_PB_d, INQ_TB_b, INQ_TB_d, ACCS_b, RAS_GSO_b, RAS_GSO_d, RAS_PCH_b, RAS_PCH_d, RAS_NDS_b, RAS_NDS_d, RAS_WAH_b, RAS_WAH_d, SD_SIS_b, SD_SIS_d, RPP_SIS_b, RPP_SIS_d, Precomp_URICA_b, Precomp_URICA_d, Contemp_URICA_b, Contemp_URICA_d, Action_URICA_b, Action_URICA_d, Maintain_URICA_b, Maintain_URICA_b, SEASA_1_b, SEASA_2_b, SEASA_1_d, PTSD_b, PHQ_b, CAGE_b, WAI, CSQ8)
@@ -254,7 +167,6 @@ par_out_loop_clean = par_out_loop %>%
 par_out_loop_clean
 write.csv(par_out_loop_clean, "par_out_loop_clean.csv")
 
-
 ```
 Create average scores and subset data
 ```{r}
@@ -296,7 +208,7 @@ target_2_clean =  target_2_clean %>%
          WAI_mean = mean(c_across(c("WAI1", "WAI2", "WAI3", "WAI4")), na.rm = TRUE),
          CSQ8_mean = mean(c_across(c("CSQ1", "CSQ2", "CSQ2", "CSQ3", "CSQ4", "CSQ5", "CSQ6", "CSQ7", "CSQ8")), na.rm =TRUE)) %>%
   select(c(ID:Employment, PTSDScreen, CAGE_AScreen, CAGE_DScreen, INQ_PB_b_mean:CSQ8_mean)) %>%
-  #Relocate variables based on part of name not super neccesary, but useful tool
+  #Relocate variables based on part of name not super necessary, but useful tool
   relocate(ends_with("_d_mean"), .after = last_col())
 target_2_clean
 ```
@@ -325,7 +237,7 @@ Create difference scores for normality
 ```{r}
 target_2_clean_within = target_2_clean
 
-diff_scores = target_2_clean_within[14:23] - target_2_clean_within[37:46]
+diff_scores = target_2_clean_within[c(13:14, 16:23)] - target_2_clean_within[37:46]
 
 names(diff_scores) = c("INQ_PB_diff", "INQ_TB_diff", "RAS_GSO_diff", "RAS_PCH_diff", "RAS_NDS_diff","RAS_WAH_diff", "SD_SIS_diff", "RPP_SIS_diff", "SEASA_1_diff","SEASA_2_diff")
 
@@ -336,6 +248,9 @@ target_2_clean_within = cbind(target_2_clean_within, diff_scores)
 Within pairwise deletion
 ###########################
 ```{r}
+#% missing
+116/dim(target_2_clean_within)[1]
+
 names_diff =c("INQ_PB_diff", "INQ_TB_diff", "RAS_GSO_diff", "RAS_PCH_diff", "RAS_NDS_diff","RAS_WAH_diff", "SD_SIS_diff", "RPP_SIS_diff", "SEASA_1_diff","SEASA_2_diff")
 
 
@@ -357,7 +272,7 @@ within_pair_out = within_pair_out %>%
   mutate(names_diff = names_diff) %>%
   relocate(names_diff)
 
-within_pair_out
+write.csv(within_pair_out, "within_pair_out.csv", row.names = FALSE)
 
 ```
 ###########################
@@ -366,6 +281,9 @@ Within complete case
 ```{r}
 
 target_2_clean_within_complete = na.omit(target_2_clean_within)
+
+#% missing
+1-(dim(target_2_clean_within_complete)[1] / dim(target_2_clean_within)[1])
 
 names_diff =c("INQ_PB_diff", "INQ_TB_diff", "RAS_GSO_diff", "RAS_PCH_diff", "RAS_NDS_diff","RAS_WAH_diff", "SD_SIS_diff", "RPP_SIS_diff", "SEASA_1_diff","SEASA_2_diff")
 
@@ -389,6 +307,7 @@ within_complete_out = within_complete_out %>%
   relocate(names_diff)
 
 within_complete_out
+write.csv(within_complete_out, "within_complete_out.csv", row.names = FALSE)
 
 ```
 
@@ -397,8 +316,8 @@ imp_mice_complete used for getting the means and sds for cohen's D's
 ```{r}
 
 setwd("P:/Evaluation/TN Lives Count_Target2/Study 5_RELATE Enhanced Follow-up & Tech/3_Data/FINAL Relate Databases")
-#imp_mice_dat = mice(m = 10, target_2_clean_within[c(2:56)], visitSequence = "monotone")
-#saveRDS(imp_mice_dat, "imp_mice_dat.rds")
+imp_mice_dat = mice(m = 10, target_2_clean_within[c(2:56)], visitSequence = "monotone")
+saveRDS(imp_mice_dat, "imp_mice_dat.rds")
 imp_mice_dat = readRDS("imp_mice_dat.rds")
 
 ## If you want long version use complete
