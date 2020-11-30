@@ -316,8 +316,8 @@ imp_mice_complete used for getting the means and sds for cohen's D's
 ```{r}
 
 setwd("P:/Evaluation/TN Lives Count_Target2/Study 5_RELATE Enhanced Follow-up & Tech/3_Data/FINAL Relate Databases")
-imp_mice_dat = mice(m = 10, target_2_clean_within[c(2:56)], visitSequence = "monotone")
-saveRDS(imp_mice_dat, "imp_mice_dat.rds")
+#imp_mice_dat = mice(m = 10, target_2_clean_within[c(2:56)], visitSequence = "monotone")
+#saveRDS(imp_mice_dat, "imp_mice_dat.rds")
 imp_mice_dat = readRDS("imp_mice_dat.rds")
 
 ## If you want long version use complete
@@ -335,16 +335,16 @@ Compute the differences scores
 imp_mice_dat_complete_diff = imp_mice_dat_complete
 dif_scaled_out = list()
 
+#imp_mice_dat_complete_diff[[i]][46:55]
 
 for(i in 1:length(imp_mice_dat_complete)){
-  dif_scaled_out[[i]] =  imp_mice_dat_complete[[i]][c("INQ_PB_d_mean", "INQ_TB_d_mean", "RAS_GSO_d_mean", "RAS_PCH_d_mean", "RAS_NDS_d_mean","RAS_WAH_d_mean", "SD_SIS_d_mean", "RPP_SIS_d_mean", "SEASA_1_d_mean","SEASA_2_d_mean")] - imp_mice_dat_complete[[i]][c("INQ_PB_b_mean", "INQ_TB_b_mean", "RAS_GSO_b_mean", "RAS_PCH_b_mean", "RAS_NDS_b_mean","RAS_WAH_b_mean", "SD_SIS_b_mean", "RPP_SIS_b_mean", "SEASA_1_b_mean","SEASA_2_b_mean")]
+dif_scaled_out[[i]] = data.frame(scale(imp_mice_dat_complete_diff[[i]][46:55]))
 colnames(dif_scaled_out[[i]]) = c("INQ_PB_diff_z", "INQ_TB_diff_z", "RAS_GSO_diff_z", "RAS_PCH_diff_z", "RAS_NDS_diff_z","RAS_WAH_diff_z", "SD_SIS_diff_z", "RPP_SIS_diff_z", "SEASA_1_diff_z","SEASA_2_diff_z")
-dif_scaled_out[[i]] = data.frame(scale(dif_scaled_out[[i]]))
-imp_mice_dat_complete_diff[[i]] =cbind(imp_mice_dat_complete_diff[[i]], dif_scaled_out[[i]])
+imp_mice_dat_complete_diff[[i]] = cbind(imp_mice_dat_complete_diff[[i]], dif_scaled_out[[i]])
 }
-
+imp_mice_dat_complete_diff[[1]]
 imp_mice_dat_complete_diff[[1]] %>%
-  dplyr::select(RPP_SIS_diff, RPP_SIS_d_mean, RPP_SIS_b_mean)
+  dplyr::select(RPP_SIS_diff, RPP_SIS_d_mean, RPP_SIS_b_mean, RPP_SIS_diff_z)
   
 ```
 
@@ -520,7 +520,6 @@ within_results = within_results %>%
   relocate(names)
 within_results
 
-write.csv(within_results, "within_results.csv", row.names = FALSE)
 ```
 ##################################
 Mean, SD, and Cohen's D for within
@@ -532,9 +531,9 @@ sd_within = list()
 mean_diff_within = list()
 sd_diff_within = list()
 
-imp_mice_dat_complete_diff[[1]]
-
-length(apply(imp_mice_dat_complete_diff[[1]][c(12:22, 26:45)], 2, mean))
+# Check you are grabbing the correct variables
+#length(apply(imp_mice_dat_complete_diff[[1]][c(12:22, 26:45)], 2, mean))
+#imp_mice_dat_complete_diff[[1]][c(46:55)]
 
 for(i in 1:length(imp_mice_dat_complete_diff)){
   mean_within[[i]] = apply(imp_mice_dat_complete_diff[[i]][c(12:22, 26:45)], 2, mean)
@@ -574,15 +573,33 @@ sd_diff_within = sd_diff_within %>%
   unlist(.) %>%
   matrix(., ncol = 10)
 
+mean_sd_diff_within = mi.meld(mean_diff_within, sd_diff_within)
 
-cohen_d_diff = round(mean_diff_within / sd_diff_within, 2)
-cohen_d_diff = apply(cohen_d_diff, 2, mean)
+mean_diff = t(mean_sd_diff_within$q.mi)
+mean_diff = data.frame(mean_diff = mean_diff)
+sd_diff = t(mean_sd_diff_within$se.mi)
+sd_diff = data.frame(sd_diff = sd_diff)
+combine_mean_sd_diff = data.frame(mean_diff, sd_diff)
+mean_sd_diff_names = names(imp_mice_dat_complete_diff[[1]][c(46:55)])
+combine_mean_sd_diff_impute = combine_mean_sd_diff %>%
+  mutate(names = mean_sd_diff_names) %>%
+  relocate(names) %>%
+  mutate_at(2:3, round, 3)
+
+
+
+cohen_d_diff = round(combine_mean_sd_diff$mean_diff / combine_mean_sd_diff$sd_diff, 2)
 cohen_d_diff = data.frame(t(data.frame(t(cohen_d_diff))))
 cohen_d_diff$names = names(imp_mice_dat_complete_diff[[1]][c(46:55)])
 names(cohen_d_diff)[1] = "cohen_d"
 cohen_d_diff = cohen_d_diff %>%
   relocate(names)
 write.csv(cohen_d_diff, "cohen_d_diff.csv", row.names = FALSE)
+
+
+within_results = cbind(within_results, cohen_d = cohen_d_diff$cohen_d)
+within_results
+write.csv(within_results, "within_results.csv", row.names = FALSE)
 ```
 
 
@@ -649,58 +666,86 @@ RAS_PCH_diff = list()
 RAS_PCH_diff_coef = list()
 RAS_PCH_diff_ses = list()
 
+##### Develop IPW weights
+#### Change Program Package to binary
+#### Package 2 is 1 and Package 1 is 0
+### Use new dat set because you are overwriting binary variables
+test_dat =  imp_mice_dat_complete_diff
+ipw_weights =list()
+predict_treat_prob = list()
+ipw_model = list()
+for(i in 1:10){
+  test_dat[[i]]$ProgramPackage = ifelse(test_dat[[i]]$ProgramPackage == 2, 1, 0)
+  test_dat[[i]]$Gender = ifelse(test_dat[[i]]$Gender == "Female", 1, 0)
+  test_dat[[i]]$Orientation = ifelse(test_dat[[i]]$Orientation == "Heterosexual", 1, 0)
+  test_dat[[i]]$Education = ifelse(test_dat[[i]]$Education == "12th grade (high school diploma/GED)", 1, ifelse(test_dat[[i]]$Education == "11th grade or less", 1, 0))
+  
+  test_dat[[i]]$Employment = ifelse(test_dat[[i]]$Employment == "Part-time employed", 1, ifelse(test_dat[[i]]$Employment == "11th grade or less", 1, 0))
+  
+  ipw_model[[i]] = glm(ProgramPackage ~ Age + Gender + Orientation + IDAfricanAmerican + IDWhiteEuropean + Education + Employment + PTSDScreen + CAGE_AScreen + CAGE_DScreen, data = test_dat[[i]], family = "binomial")
+  predict_treat_prob[[i]] = predict(ipw_model[[i]], type = "response")
+  ipw_weights[[i]] = 1/predict_treat_prob[[i]]
+}
+range_out = list()
+for(i in 1:10){
+  range_out[[i]] =  range(scale(ipw_weights[[i]]))
+}
+range_out
 
+
+
+INQ_PB_diff = summary(lm(INQ_PB_diff_z ~ ProgramPackage , data = imp_mice_dat_complete_diff[[1]]), weights = ipw_weights[[1]])
 
 for(i in 1:length(imp_mice_dat_complete_diff)){
-  INQ_PB_diff[[i]] = summary(lm(INQ_PB_diff_z ~ ProgramPackage , data = imp_mice_dat_complete_diff[[i]]))
+  INQ_PB_diff[[i]] = summary(lm(INQ_PB_diff_z ~ ProgramPackage , data = imp_mice_dat_complete_diff[[i]]), weights = ipw_weights[[i]])
   INQ_PB_diff[[i]] = INQ_PB_diff[[i]]$coefficients
   INQ_PB_diff_coef[[i]] = INQ_PB_diff[[i]][2,1]
   INQ_PB_diff_ses[[i]] =  INQ_PB_diff[[i]][2,2]
   
   
-  INQ_TB_diff[[i]] = summary(lm(INQ_TB_diff_z ~ ProgramPackage , data = imp_mice_dat_complete_diff[[i]]))
+  INQ_TB_diff[[i]] = summary(lm(INQ_TB_diff_z ~ ProgramPackage , data = imp_mice_dat_complete_diff[[i]]), weights = ipw_weights[[i]])
   INQ_TB_diff[[i]] = INQ_TB_diff[[i]]$coefficients
   INQ_TB_diff_coef[[i]] = INQ_TB_diff[[i]][2,1]
   INQ_TB_diff_ses[[i]] = INQ_TB_diff[[i]][2,2]
   
   
-  RAS_GSO_diff[[i]] = summary(lm(RAS_GSO_diff_z ~ ProgramPackage , data = imp_mice_dat_complete_diff[[i]]))
+  RAS_GSO_diff[[i]] = summary(lm(RAS_GSO_diff_z ~ ProgramPackage , data = imp_mice_dat_complete_diff[[i]]), weights = ipw_weights[[i]])
   RAS_GSO_diff[[i]] = RAS_GSO_diff[[i]]$coefficients
   RAS_GSO_diff_coef[[i]] = RAS_GSO_diff[[i]][2,1]
   RAS_GSO_diff_ses[[i]] = RAS_GSO_diff[[i]][2,2]
   
-  RAS_PCH_diff[[i]] = summary(lm(RAS_PCH_diff_z ~ ProgramPackage , data = imp_mice_dat_complete_diff[[i]]))
+  RAS_PCH_diff[[i]] = summary(lm(RAS_PCH_diff_z ~ ProgramPackage , data = imp_mice_dat_complete_diff[[i]]), weights = ipw_weights[[i]])
   RAS_PCH_diff[[i]] = RAS_PCH_diff[[i]]$coefficients
   RAS_PCH_diff_coef[[i]] = RAS_PCH_diff[[i]][2,1]
   RAS_PCH_diff_ses[[i]] = RAS_PCH_diff[[i]][2,2]
   
-  RAS_NDS_diff[[i]] = summary(lm(RAS_NDS_diff_z ~ ProgramPackage , data = imp_mice_dat_complete_diff[[i]]))
+  RAS_NDS_diff[[i]] = summary(lm(RAS_NDS_diff_z ~ ProgramPackage , data = imp_mice_dat_complete_diff[[i]]), weights = ipw_weights[[i]])
   RAS_NDS_diff[[i]] = RAS_NDS_diff[[i]]$coefficients
   RAS_NDS_diff_coef[[i]] = RAS_NDS_diff[[i]][2,1]
   RAS_NDS_diff_ses[[i]] = RAS_NDS_diff[[i]][2,2]
   
   
-  RAS_WAH_diff[[i]] = summary(lm(RAS_WAH_diff_z ~ ProgramPackage , data = imp_mice_dat_complete_diff[[i]]))
+  RAS_WAH_diff[[i]] = summary(lm(RAS_WAH_diff_z ~ ProgramPackage , data = imp_mice_dat_complete_diff[[i]]), weights = ipw_weights[[i]])
   RAS_WAH_diff[[i]] = RAS_WAH_diff[[i]]$coefficients
   RAS_WAH_diff_coef[[i]] = RAS_WAH_diff[[i]][2,1]
   RAS_WAH_diff_ses[[i]] = RAS_WAH_diff[[i]][2,2]
   
-  SD_SIS_diff[[i]] = summary(lm(SD_SIS_diff_z ~ ProgramPackage , data = imp_mice_dat_complete_diff[[i]]))
+  SD_SIS_diff[[i]] = summary(lm(SD_SIS_diff_z ~ ProgramPackage , data = imp_mice_dat_complete_diff[[i]]), weights = ipw_weights[[i]])
   SD_SIS_diff[[i]] = SD_SIS_diff[[i]]$coefficients
   SD_SIS_diff_coef[[i]] = SD_SIS_diff[[i]][2,1]
   SD_SIS_diff_ses[[i]] = SD_SIS_diff[[i]][2,2]
   
-  RPP_SIS_diff[[i]] = summary(lm(RPP_SIS_diff_z ~ ProgramPackage , data = imp_mice_dat_complete_diff[[i]]))
+  RPP_SIS_diff[[i]] = summary(lm(RPP_SIS_diff_z ~ ProgramPackage , data = imp_mice_dat_complete_diff[[i]]), weights = ipw_weights[[i]])
   RPP_SIS_diff[[i]] = RPP_SIS_diff[[i]]$coefficients
   RPP_SIS_diff_coef[[i]] = RPP_SIS_diff[[i]][2,1]
   RPP_SIS_diff_ses[[i]] = RPP_SIS_diff[[i]][2,2]
   
-  SEASA_1_diff[[i]] = summary(lm(SEASA_1_diff_z ~ ProgramPackage , data = imp_mice_dat_complete_diff[[i]]))
+  SEASA_1_diff[[i]] = summary(lm(SEASA_1_diff_z ~ ProgramPackage , data = imp_mice_dat_complete_diff[[i]]), weights = ipw_weights[[i]])
   SEASA_1_diff[[i]] = SEASA_1_diff[[i]]$coefficients
   SEASA_1_diff_coef[[i]] = SEASA_1_diff[[i]][2,1]
   SEASA_1_diff_ses[[i]] = SEASA_1_diff[[i]][2,2]
   
-  SEASA_2_diff[[i]] = summary(lm(SEASA_2_diff_z ~ ProgramPackage , data = imp_mice_dat_complete_diff[[i]]))
+  SEASA_2_diff[[i]] = summary(lm(SEASA_2_diff_z ~ ProgramPackage , data = imp_mice_dat_complete_diff[[i]]), weights = ipw_weights[[i]])
   SEASA_2_diff[[i]] = SEASA_2_diff[[i]]$coefficients
   SEASA_2_diff_coef[[i]] = SEASA_2_diff[[i]][2,1]
   SEASA_2_diff_ses[[i]] = SEASA_2_diff[[i]][2,2]
@@ -730,7 +775,7 @@ ses = data.frame(ses = ses)
 combine_par_ses = data.frame(par, ses)
 
 ### Create critical t and df outside only need one
-df = dim(target_2_clean)[1]-1
+df = dim(target_2_clean)[1]-2
 critical_t = abs(qt(0.05/2, df))
 between_results = combine_par_ses %>%
   mutate(t_stat = par / ses) %>%
@@ -751,42 +796,10 @@ Extra
 ```{r}
 
 
-target_within = imp_mice_dat %>% 
-  with(., lm(cbind(INQ_PB_diff_z,  INQ_TB_diff_z, RAS_GSO_diff_z, RAS_PCH_diff_z, RAS_NDS_diff_z, RAS_WAH_diff_z, SD_SIS_diff_z, RPP_SIS_diff_z, SEASA_1_diff_z, SEASA_2_diff_z) ~ 1)) %>%
-  summary(.) %>%
-  data.frame(.) %>%
-  select(response, estimate, std.error)
 
-coefs = target_within %>%
-  select(estimate) %>%
-  unlist(.) %>%
-  matrix(., ncol =10, byrow = TRUE) 
 
-ses = target_within %>%
-  select(std.error) %>%
-  unlist(.) %>%
-  matrix(., ncol =10, byrow = TRUE)
-ses
 
-## Create meld and then turn into a data frame
-combine_par_ses = mi.meld(coefs, ses)
-combine_par_ses
-par= t(combine_par_ses$q.mi)
-par = data.frame(par = par)
-ses = t(combine_par_ses$se.mi)
-ses = data.frame(ses = ses)
-combine_par_ses = data.frame(par, ses)
 
-### Create critical t and df outside only need one
-df = dim(target_2_clean)[1]-1
-critical_t = abs(qt(0.05/2, df))
-within_results = combine_par_ses %>%
-  mutate(t_stat = par / ses) %>%
-  mutate(p_value = 2*pt(-abs(t_stat), df = df)) %>%
-  round(., 3)
-  
-
-within_results
 
 
 
