@@ -48,7 +48,7 @@ target_2_clean = target_2 %>%
   arrange(ID_single) %>%
   relocate(ID, ID_single, id_dup) %>%
   ## Drop those who do not have the exact same id that you need to remove from the id_remove sheet
-  filter(!ID %in% c(5.3, 5.4, 270.1, 270.2, 449.1, 449.1, 495.1, 495.2, 623.3, 1074, 1074.1, 1103, 1103.1, 1104, 1104.1, 1129.2, 1129.3)) %>%
+  filter(!ID %in% c(5.3, 5.4, 270.2, 495.1, 495.2, 623.2, 1074, 1103, 1104.1, 1129.3)) %>%
   ## Now you can keep instance of duplicates
 distinct(ID, .keep_all = TRUE) %>%
   select(-c(ID_single, id_dup)) %>%
@@ -88,8 +88,6 @@ distinct(ID, .keep_all = TRUE) %>%
   ## Reverse score last item
   mutate(CSQ8 = 5-CSQ8)
   ## values to remove
-#id_remove = target_2_clean %>%
-  #filter(id_dup == TRUE)
   
 #write.csv(id_remove, "id_remove.csv", row.names = FALSE)
 target_2_clean
@@ -178,8 +176,8 @@ WAI = target_2_clean[c("WAI1", "WAI2", "WAI3", "WAI4")]
 CSQ8 = target_2_clean %>%
   select(CSQ1:CSQ8)
 
-
 ```
+
 Create function for running through MAP, Parallel, and Omega
 ```{r}
 constructs = list(INQ_PB_b, INQ_PB_d, INQ_TB_b, INQ_TB_d, ACCS_b, RAS_GSO_b, RAS_GSO_d, RAS_PCH_b, RAS_PCH_d, RAS_NDS_b, RAS_NDS_d, RAS_WAH_b, RAS_WAH_d, SD_SIS_b, SD_SIS_d, RPP_SIS_b, RPP_SIS_d, Precomp_URICA_b, Precomp_URICA_d, Contemp_URICA_b, Contemp_URICA_d, Action_URICA_b, Action_URICA_d, Maintain_URICA_b, Maintain_URICA_b, SEASA_1_b, SEASA_2_b, SEASA_1_d, PTSD_b, PHQ_b, CAGE_b, WAI, CSQ8)
@@ -254,10 +252,7 @@ par_out_loop_clean = par_out_loop %>%
 par_out_loop_clean
 write.csv(par_out_loop_clean, "par_out_loop_clean.csv")
 
-
 ```
-
-
 Create average scores and subset data
 ```{r}
 
@@ -298,7 +293,7 @@ target_2_clean =  target_2_clean %>%
          WAI_mean = mean(c_across(c("WAI1", "WAI2", "WAI3", "WAI4")), na.rm = TRUE),
          CSQ8_mean = mean(c_across(c("CSQ1", "CSQ2", "CSQ2", "CSQ3", "CSQ4", "CSQ5", "CSQ6", "CSQ7", "CSQ8")), na.rm =TRUE)) %>%
   select(c(ID:Employment, PTSDScreen, CAGE_AScreen, CAGE_DScreen, INQ_PB_b_mean:CSQ8_mean)) %>%
-  #Relocate variables based on part of name not super neccesary, but useful tool
+  #Relocate variables based on part of name not super necessary, but useful tool
   relocate(ends_with("_d_mean"), .after = last_col())
 target_2_clean
 ```
@@ -327,27 +322,63 @@ Create difference scores for normality
 ```{r}
 target_2_clean_within = target_2_clean
 
-diff_scores = target_2_clean_within[14:23] - target_2_clean_within[37:46]
+diff_scores =  target_2_clean_within[37:46] - target_2_clean_within[c(13:14, 16:23)]
 
 names(diff_scores) = c("INQ_PB_diff", "INQ_TB_diff", "RAS_GSO_diff", "RAS_PCH_diff", "RAS_NDS_diff","RAS_WAH_diff", "SD_SIS_diff", "RPP_SIS_diff", "SEASA_1_diff","SEASA_2_diff")
 
 target_2_clean_within = cbind(target_2_clean_within, diff_scores)
-target_2_clean_within = na.omit(target_2_clean_within)
-dim(target_2_clean_within)
 ```
 
-
-Get complete analyses within
+###########################
+Within pairwise deletion
+###########################
 ```{r}
+#% missing
+116/dim(target_2_clean_within)[1]
+116-dim(target_2_clean_within)[1]
 names_diff =c("INQ_PB_diff", "INQ_TB_diff", "RAS_GSO_diff", "RAS_PCH_diff", "RAS_NDS_diff","RAS_WAH_diff", "SD_SIS_diff", "RPP_SIS_diff", "SEASA_1_diff","SEASA_2_diff")
 
 
-within_complete = lm(cbind(INQ_PB_diff, INQ_TB_diff, RAS_GSO_diff, RAS_PCH_diff, RAS_NDS_diff,RAS_WAH_diff, SD_SIS_diff, RPP_SIS_diff, SEASA_1_diff,SEASA_2_diff) ~ 1, data = target_2_clean_within)
+within_pair = lm(cbind(INQ_PB_diff, INQ_TB_diff, RAS_GSO_diff, RAS_PCH_diff, RAS_NDS_diff,RAS_WAH_diff, SD_SIS_diff, RPP_SIS_diff, SEASA_1_diff,SEASA_2_diff) ~ 1, data = target_2_clean_within)
+within_pair_sum = summary(within_pair)
+
+### Grab results 
+within_pair_out = list()
+ci_within_pair_out = list()
+for(i in 1:10){
+ within_pair_out[[i]] =  within_pair_sum[[i]]$coefficients[,3:4]
+}
+within_pair_out = within_pair_out %>%
+  unlist(.) %>%
+  matrix(., ncol = 2, byrow = TRUE) %>%
+  round(., 3) %>%
+  data.frame(.) %>%
+  rename("t-stat" = X1, "p-value" = X2) %>%
+  mutate(names_diff = names_diff) %>%
+  relocate(names_diff)
+
+write.csv(within_pair_out, "within_pair_out.csv", row.names = FALSE)
+
+```
+###########################
+Within complete case
+##########################
+```{r}
+
+target_2_clean_within_complete = na.omit(target_2_clean_within)
+
+#% missing
+1-(dim(target_2_clean_within_complete)[1] / dim(target_2_clean_within)[1])
+
+names_diff =c("INQ_PB_diff", "INQ_TB_diff", "RAS_GSO_diff", "RAS_PCH_diff", "RAS_NDS_diff","RAS_WAH_diff", "SD_SIS_diff", "RPP_SIS_diff", "SEASA_1_diff","SEASA_2_diff")
+
+
+within_complete = lm(cbind(INQ_PB_diff, INQ_TB_diff, RAS_GSO_diff, RAS_PCH_diff, RAS_NDS_diff,RAS_WAH_diff, SD_SIS_diff, RPP_SIS_diff, SEASA_1_diff,SEASA_2_diff) ~ 1, data = target_2_clean_within_complete)
 within_complete_sum = summary(within_complete)
 
 ### Grab results 
 within_complete_out = list()
-ci_within_out = list()
+ci_within_complete_out = list()
 for(i in 1:10){
  within_complete_out[[i]] =  within_complete_sum[[i]]$coefficients[,3:4]
 }
@@ -361,14 +392,16 @@ within_complete_out = within_complete_out %>%
   relocate(names_diff)
 
 within_complete_out
+write.csv(within_complete_out, "within_complete_out.csv", row.names = FALSE)
 
 ```
+
 Need both the imp mice dat and the imp_mice_complete
 imp_mice_complete used for getting the means and sds for cohen's D's
 ```{r}
 
 setwd("P:/Evaluation/TN Lives Count_Target2/Study 5_RELATE Enhanced Follow-up & Tech/3_Data/FINAL Relate Databases")
-#imp_mice_dat = mice(m = 10, target_2_clean[c(2:46)], visitSequence = "monotone")
+#imp_mice_dat = mice(m = 10, target_2_clean_within[c(2:56)], visitSequence = "monotone")
 #saveRDS(imp_mice_dat, "imp_mice_dat.rds")
 imp_mice_dat = readRDS("imp_mice_dat.rds")
 
@@ -405,21 +438,9 @@ imp_mice_dat_complete_diff[[i]] =cbind(imp_mice_dat_complete_diff[[i]], dif_scal
 
 imp_mice_dat_complete_diff[[1]] %>%
   dplyr::select(RPP_SIS_diff, RPP_SIS_d_mean, RPP_SIS_b_mean)
-  
 ```
 
 
-Examples
-Compute differences scores after imputation and just the list data set
-
-```{r}
-
-
-
-summary(lm(RAS_GSO_diff ~ 1, data = imp_mice_dat_complete_diff[[10]])) 
-
-
-```
 
 
 
@@ -543,6 +564,7 @@ SEASA_2_diff_ses[[i]] = SEASA_2_diff[[i]][2]
 
 within_coef_list = list(INQ_PB_diff_coef, INQ_TB_diff_coef,  RAS_GSO_diff_coef,  RAS_PCH_diff_coef, RAS_NDS_diff_coef,  RAS_WAH_diff_coef,  SD_SIS_diff_coef,RPP_SIS_diff_coef,  SEASA_1_diff_coef,  SEASA_2_diff_coef)
 
+## Not by row want by column 
 within_coef_list = within_coef_list %>%
   unlist(.) %>%
   matrix(., ncol = 10)
@@ -580,7 +602,6 @@ within_results = within_results %>%
   relocate(names)
 within_results
 
-write.csv(within_results, "within_results.csv", row.names = FALSE)
 ```
 ##################################
 Mean, SD, and Cohen's D for within
@@ -592,9 +613,9 @@ sd_within = list()
 mean_diff_within = list()
 sd_diff_within = list()
 
-imp_mice_dat_complete_diff[[1]]
-
-length(apply(imp_mice_dat_complete_diff[[1]][c(12:22, 26:45)], 2, mean))
+# Check you are grabbing the correct variables
+#length(apply(imp_mice_dat_complete_diff[[1]][c(12:22, 26:45)], 2, mean))
+#imp_mice_dat_complete_diff[[1]][c(46:55)]
 
 for(i in 1:length(imp_mice_dat_complete_diff)){
   mean_within[[i]] = apply(imp_mice_dat_complete_diff[[i]][c(12:22, 26:45)], 2, mean)
@@ -605,11 +626,11 @@ for(i in 1:length(imp_mice_dat_complete_diff)){
 
 mean_within = mean_within %>%
   unlist(.) %>%
-  matrix(., ncol = 31)
+  matrix(., ncol = 31, byrow = TRUE)
 
 sd_within = sd_within %>%
   unlist(.) %>%
-  matrix(., ncol = 31)
+  matrix(., ncol = 31, byrow = TRUE)
 
 mean_sd_within = mi.meld(mean_within, sd_within)
 
@@ -628,21 +649,39 @@ write.csv(combine_mean_sd_impute, "combine_mean_sd_impute.csv", row.names = FALS
 ##### Combine for Cohen's D
 mean_diff_within = mean_diff_within %>%
   unlist(.) %>%
-  matrix(., ncol = 10)
+  matrix(., ncol = 10, byrow = TRUE)
   
 sd_diff_within = sd_diff_within %>%
   unlist(.) %>%
-  matrix(., ncol = 10)
+  matrix(., ncol = 10, byrow = TRUE)
+
+mean_sd_diff_within = mi.meld(mean_diff_within, sd_diff_within)
+
+mean_diff = t(mean_sd_diff_within$q.mi)
+mean_diff = data.frame(mean_diff = mean_diff)
+sd_diff = t(mean_sd_diff_within$se.mi)
+sd_diff = data.frame(sd_diff = sd_diff)
+combine_mean_sd_diff = data.frame(mean_diff, sd_diff)
+mean_sd_diff_names = names(imp_mice_dat_complete_diff[[1]][c(46:55)])
+combine_mean_sd_diff_impute = combine_mean_sd_diff %>%
+  mutate(names = mean_sd_diff_names) %>%
+  relocate(names) %>%
+  mutate_at(2:3, round, 3)
 
 
-cohen_d_diff = round(mean_diff_within / sd_diff_within, 2)
-cohen_d_diff = apply(cohen_d_diff, 2, mean)
+
+cohen_d_diff = round(combine_mean_sd_diff$mean_diff / combine_mean_sd_diff$sd_diff, 2)
 cohen_d_diff = data.frame(t(data.frame(t(cohen_d_diff))))
 cohen_d_diff$names = names(imp_mice_dat_complete_diff[[1]][c(46:55)])
 names(cohen_d_diff)[1] = "cohen_d"
 cohen_d_diff = cohen_d_diff %>%
   relocate(names)
 write.csv(cohen_d_diff, "cohen_d_diff.csv", row.names = FALSE)
+
+
+within_results = cbind(within_results, cohen_d = cohen_d_diff$cohen_d)
+within_results
+write.csv(within_results, "within_results.csv", row.names = FALSE)
 ```
 
 
@@ -709,58 +748,86 @@ RAS_PCH_diff = list()
 RAS_PCH_diff_coef = list()
 RAS_PCH_diff_ses = list()
 
+##### Develop IPW weights
+#### Change Program Package to binary
+#### Package 2 is 1 and Package 1 is 0
+### Use new dat set because you are overwriting binary variables
+test_dat =  imp_mice_dat_complete_diff
+ipw_weights =list()
+predict_treat_prob = list()
+ipw_model = list()
+for(i in 1:10){
+  test_dat[[i]]$ProgramPackage = ifelse(test_dat[[i]]$ProgramPackage == 2, 1, 0)
+  test_dat[[i]]$Gender = ifelse(test_dat[[i]]$Gender == "Female", 1, 0)
+  test_dat[[i]]$Orientation = ifelse(test_dat[[i]]$Orientation == "Heterosexual", 1, 0)
+  test_dat[[i]]$Education = ifelse(test_dat[[i]]$Education == "12th grade (high school diploma/GED)", 1, ifelse(test_dat[[i]]$Education == "11th grade or less", 1, 0))
+  
+  test_dat[[i]]$Employment = ifelse(test_dat[[i]]$Employment == "Part-time employed", 1, ifelse(test_dat[[i]]$Employment == "11th grade or less", 1, 0))
+  
+  ipw_model[[i]] = glm(ProgramPackage ~ Age + Gender + Orientation + IDAfricanAmerican + IDWhiteEuropean + Education + Employment + PTSDScreen + CAGE_AScreen + CAGE_DScreen, data = test_dat[[i]], family = "binomial")
+  predict_treat_prob[[i]] = predict(ipw_model[[i]], type = "response")
+  ipw_weights[[i]] = 1/predict_treat_prob[[i]]
+}
+range_out = list()
+for(i in 1:10){
+  range_out[[i]] =  range(scale(ipw_weights[[i]]))
+}
+range_out
 
+
+
+INQ_PB_diff = summary(lm(INQ_PB_diff_z ~ ProgramPackage , data = imp_mice_dat_complete_diff[[1]]), weights = ipw_weights[[1]])
 
 for(i in 1:length(imp_mice_dat_complete_diff)){
-  INQ_PB_diff[[i]] = summary(lm(INQ_PB_diff_z ~ ProgramPackage , data = imp_mice_dat_complete_diff[[i]]))
+  INQ_PB_diff[[i]] = summary(lm(INQ_PB_diff_z ~ ProgramPackage , data = imp_mice_dat_complete_diff[[i]]), weights = ipw_weights[[i]])
   INQ_PB_diff[[i]] = INQ_PB_diff[[i]]$coefficients
   INQ_PB_diff_coef[[i]] = INQ_PB_diff[[i]][2,1]
   INQ_PB_diff_ses[[i]] =  INQ_PB_diff[[i]][2,2]
   
   
-  INQ_TB_diff[[i]] = summary(lm(INQ_TB_diff_z ~ ProgramPackage , data = imp_mice_dat_complete_diff[[i]]))
+  INQ_TB_diff[[i]] = summary(lm(INQ_TB_diff_z ~ ProgramPackage , data = imp_mice_dat_complete_diff[[i]]), weights = ipw_weights[[i]])
   INQ_TB_diff[[i]] = INQ_TB_diff[[i]]$coefficients
   INQ_TB_diff_coef[[i]] = INQ_TB_diff[[i]][2,1]
   INQ_TB_diff_ses[[i]] = INQ_TB_diff[[i]][2,2]
   
   
-  RAS_GSO_diff[[i]] = summary(lm(RAS_GSO_diff_z ~ ProgramPackage , data = imp_mice_dat_complete_diff[[i]]))
+  RAS_GSO_diff[[i]] = summary(lm(RAS_GSO_diff_z ~ ProgramPackage , data = imp_mice_dat_complete_diff[[i]]), weights = ipw_weights[[i]])
   RAS_GSO_diff[[i]] = RAS_GSO_diff[[i]]$coefficients
   RAS_GSO_diff_coef[[i]] = RAS_GSO_diff[[i]][2,1]
   RAS_GSO_diff_ses[[i]] = RAS_GSO_diff[[i]][2,2]
   
-  RAS_PCH_diff[[i]] = summary(lm(RAS_PCH_diff_z ~ ProgramPackage , data = imp_mice_dat_complete_diff[[i]]))
+  RAS_PCH_diff[[i]] = summary(lm(RAS_PCH_diff_z ~ ProgramPackage , data = imp_mice_dat_complete_diff[[i]]), weights = ipw_weights[[i]])
   RAS_PCH_diff[[i]] = RAS_PCH_diff[[i]]$coefficients
   RAS_PCH_diff_coef[[i]] = RAS_PCH_diff[[i]][2,1]
   RAS_PCH_diff_ses[[i]] = RAS_PCH_diff[[i]][2,2]
   
-  RAS_NDS_diff[[i]] = summary(lm(RAS_NDS_diff_z ~ ProgramPackage , data = imp_mice_dat_complete_diff[[i]]))
+  RAS_NDS_diff[[i]] = summary(lm(RAS_NDS_diff_z ~ ProgramPackage , data = imp_mice_dat_complete_diff[[i]]), weights = ipw_weights[[i]])
   RAS_NDS_diff[[i]] = RAS_NDS_diff[[i]]$coefficients
   RAS_NDS_diff_coef[[i]] = RAS_NDS_diff[[i]][2,1]
   RAS_NDS_diff_ses[[i]] = RAS_NDS_diff[[i]][2,2]
   
   
-  RAS_WAH_diff[[i]] = summary(lm(RAS_WAH_diff_z ~ ProgramPackage , data = imp_mice_dat_complete_diff[[i]]))
+  RAS_WAH_diff[[i]] = summary(lm(RAS_WAH_diff_z ~ ProgramPackage , data = imp_mice_dat_complete_diff[[i]]), weights = ipw_weights[[i]])
   RAS_WAH_diff[[i]] = RAS_WAH_diff[[i]]$coefficients
   RAS_WAH_diff_coef[[i]] = RAS_WAH_diff[[i]][2,1]
   RAS_WAH_diff_ses[[i]] = RAS_WAH_diff[[i]][2,2]
   
-  SD_SIS_diff[[i]] = summary(lm(SD_SIS_diff_z ~ ProgramPackage , data = imp_mice_dat_complete_diff[[i]]))
+  SD_SIS_diff[[i]] = summary(lm(SD_SIS_diff_z ~ ProgramPackage , data = imp_mice_dat_complete_diff[[i]]), weights = ipw_weights[[i]])
   SD_SIS_diff[[i]] = SD_SIS_diff[[i]]$coefficients
   SD_SIS_diff_coef[[i]] = SD_SIS_diff[[i]][2,1]
   SD_SIS_diff_ses[[i]] = SD_SIS_diff[[i]][2,2]
   
-  RPP_SIS_diff[[i]] = summary(lm(RPP_SIS_diff_z ~ ProgramPackage , data = imp_mice_dat_complete_diff[[i]]))
+  RPP_SIS_diff[[i]] = summary(lm(RPP_SIS_diff_z ~ ProgramPackage , data = imp_mice_dat_complete_diff[[i]]), weights = ipw_weights[[i]])
   RPP_SIS_diff[[i]] = RPP_SIS_diff[[i]]$coefficients
   RPP_SIS_diff_coef[[i]] = RPP_SIS_diff[[i]][2,1]
   RPP_SIS_diff_ses[[i]] = RPP_SIS_diff[[i]][2,2]
   
-  SEASA_1_diff[[i]] = summary(lm(SEASA_1_diff_z ~ ProgramPackage , data = imp_mice_dat_complete_diff[[i]]))
+  SEASA_1_diff[[i]] = summary(lm(SEASA_1_diff_z ~ ProgramPackage , data = imp_mice_dat_complete_diff[[i]]), weights = ipw_weights[[i]])
   SEASA_1_diff[[i]] = SEASA_1_diff[[i]]$coefficients
   SEASA_1_diff_coef[[i]] = SEASA_1_diff[[i]][2,1]
   SEASA_1_diff_ses[[i]] = SEASA_1_diff[[i]][2,2]
   
-  SEASA_2_diff[[i]] = summary(lm(SEASA_2_diff_z ~ ProgramPackage , data = imp_mice_dat_complete_diff[[i]]))
+  SEASA_2_diff[[i]] = summary(lm(SEASA_2_diff_z ~ ProgramPackage , data = imp_mice_dat_complete_diff[[i]]), weights = ipw_weights[[i]])
   SEASA_2_diff[[i]] = SEASA_2_diff[[i]]$coefficients
   SEASA_2_diff_coef[[i]] = SEASA_2_diff[[i]][2,1]
   SEASA_2_diff_ses[[i]] = SEASA_2_diff[[i]][2,2]
@@ -790,7 +857,7 @@ ses = data.frame(ses = ses)
 combine_par_ses = data.frame(par, ses)
 
 ### Create critical t and df outside only need one
-df = dim(target_2_clean)[1]-1
+df = dim(target_2_clean)[1]-2
 critical_t = abs(qt(0.05/2, df))
 between_results = combine_par_ses %>%
   mutate(t_stat = par / ses) %>%
@@ -800,58 +867,10 @@ between_results = combine_par_ses %>%
   round(., 3)
 
 between_results
-
-
-
-```
-
-
-
-Extra
-```{r}
-
-
-target_within = imp_mice_dat %>% 
-  with(., lm(cbind(INQ_PB_diff_z,  INQ_TB_diff_z, RAS_GSO_diff_z, RAS_PCH_diff_z, RAS_NDS_diff_z, RAS_WAH_diff_z, SD_SIS_diff_z, RPP_SIS_diff_z, SEASA_1_diff_z, SEASA_2_diff_z) ~ 1)) %>%
-  summary(.) %>%
-  data.frame(.) %>%
-  select(response, estimate, std.error)
-
-coefs = target_within %>%
-  select(estimate) %>%
-  unlist(.) %>%
-  matrix(., ncol =10, byrow = TRUE) 
-
-ses = target_within %>%
-  select(std.error) %>%
-  unlist(.) %>%
-  matrix(., ncol =10, byrow = TRUE)
-ses
-
-## Create meld and then turn into a data frame
-combine_par_ses = mi.meld(coefs, ses)
-combine_par_ses
-par= t(combine_par_ses$q.mi)
-par = data.frame(par = par)
-ses = t(combine_par_ses$se.mi)
-ses = data.frame(ses = ses)
-combine_par_ses = data.frame(par, ses)
-
-### Create critical t and df outside only need one
-df = dim(target_2_clean)[1]-1
-critical_t = abs(qt(0.05/2, df))
-within_results = combine_par_ses %>%
-  mutate(t_stat = par / ses) %>%
-  mutate(p_value = 2*pt(-abs(t_stat), df = df)) %>%
-  round(., 3)
-  
-
-within_results
-
+write.csv(between_results, "between_results.csv", row.names = FALSE)
 
 
 ```
 
 
-Cohen's D
 
