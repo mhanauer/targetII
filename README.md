@@ -298,6 +298,14 @@ target_2_clean =  target_2_clean %>%
 target_2_clean
 ```
 
+Get p-change
+```{r}
+target_2_clean
+
+
+```
+
+
 Check ranges and missingness
 ```{r}
 apply(target_2_clean, 2, range, na.rm = TRUE)
@@ -340,7 +348,7 @@ Within pairwise deletion
 ```{r}
 #% missing
 116/dim(target_2_clean_within)[1]
-116-dim(target_2_clean_within)[1]
+dim(target_2_clean_within)[1] - 116
 names_diff =c("INQ_PB_diff", "INQ_TB_diff", "RAS_GSO_diff", "RAS_PCH_diff", "RAS_NDS_diff","RAS_WAH_diff", "SD_SIS_diff", "RPP_SIS_diff", "SEASA_1_diff","SEASA_2_diff")
 
 
@@ -395,7 +403,7 @@ target_2_clean_between = target_2_clean_between %>%
 #### Get n's
 dim(target_2_clean_between)[1]
 111 / dim(target_2_clean)[1]
-
+dim(target_2_clean)[1] - 111
 target_2_clean_between$ProgramPackage = ifelse(target_2_clean_between$ProgramPackage == 2, 1, 0)
 target_2_clean_between$Gender = ifelse(target_2_clean_between$Gender == "Female", 1, 0)
 target_2_clean_between$Orientation = ifelse(target_2_clean_between$Orientation == "Heterosexual", 1, 0)
